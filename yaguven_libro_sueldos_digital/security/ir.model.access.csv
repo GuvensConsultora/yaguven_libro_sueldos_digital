@@ -1,0 +1,2 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_lsd_export_wizard_user,lsd.export.wizard.user,model_lsd_export_wizard,hr_payroll.group_hr_payroll_user,1,1,1,1

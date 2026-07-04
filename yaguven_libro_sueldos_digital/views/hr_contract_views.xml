@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="hr_contract_view_form_lsd" model="ir.ui.view">
+        <field name="name">hr.contract.view.form.lsd</field>
+        <field name="model">hr.contract</field>
+        <field name="inherit_id" ref="hr_contract.hr_contract_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='other']" position="after">
+                <page string="Libro de Sueldos Digital (AFIP)" name="lsd_afip">
+                    <group>
+                        <group string="Códigos de tabla AFIP">
+                            <field name="x_situacion_revista"/>
+                            <field name="x_condicion"/>
+                            <field name="x_actividad"/>
+                            <field name="x_pct_tarea_diferencial"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

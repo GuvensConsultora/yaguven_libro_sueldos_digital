@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_lsd_export_wizard_form" model="ir.ui.view">
+        <field name="name">lsd.export.wizard.form</field>
+        <field name="model">lsd.export.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Exportar Libro de Sueldos Digital">
+                <group>
+                    <group string="Período">
+                        <field name="year"/>
+                        <field name="month"/>
+                        <field name="company_id" groups="base.group_multi_company"/>
+                    </group>
+                    <group string="Liquidación">
+                        <field name="tipo_liquidacion"/>
+                        <field name="modo_envio"/>
+                        <field name="nro_liquidacion"/>
+                        <field name="dias_base"/>
+                        <field name="fecha_pago"/>
+                        <field name="localidad"/>
+                    </group>
+                </group>
+                <group string="Resultado" invisible="state != 'done'">
+                    <field name="file" filename="filename" readonly="1"/>
+                    <field name="filename" invisible="1"/>
+                    <field name="log" nolabel="1" readonly="1"/>
+                </group>
+                <field name="state" invisible="1"/>
+                <footer>
+                    <button name="action_generar" type="object"
+                            string="Generar TXT" class="btn-primary"/>
+                    <button string="Cerrar" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_lsd_export_wizard" model="ir.actions.act_window">
+        <field name="name">Libro de Sueldos Digital (LSD / F.931)</field>
+        <field name="res_model">lsd.export.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <menuitem id="menu_lsd_export"
+              name="Libro de Sueldos Digital (LSD)"
+              parent="hr_payroll.menu_hr_payroll_report"
+              action="action_lsd_export_wizard"
+              sequence="50"/>
+</odoo>
