@@ -158,7 +158,10 @@ class LsdExportWizard(models.TransientModel):
         c = payslip.contract_id
         os = c.obra_social_id
         rnos = os.codigo_os_dgi if os else ''
-        detrac = DETRAC_COMPLETA
+        # Detracción PyME proporcional a la jornada: media para trabajadores de
+        # media jornada (marca `x_os_doble` = doble aporte OS, verificado 4/4
+        # contra Tango mayo 2026), completa para el resto.
+        detrac = DETRAC_MEDIA if c.x_os_doble else DETRAC_COMPLETA
         b = gross
         bi = [b, b, b, b, b, 0.0, 0.0, b, b]
         bi[8] = round(bruta - redondeo, 2)          # NR en ART
