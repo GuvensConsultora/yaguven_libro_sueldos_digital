@@ -20,6 +20,13 @@
                         <field name="localidad"/>
                     </group>
                 </group>
+                <group string="Grupo de empleados">
+                    <field name="grupo"/>
+                    <field name="employee_ids" widget="many2many_tags"
+                           invisible="grupo != 'individual'"/>
+                    <field name="excluir_employee_ids" widget="many2many_tags"
+                           invisible="grupo == 'individual'"/>
+                </group>
                 <group string="Resultado" invisible="state != 'done'">
                     <field name="file" filename="filename" readonly="1"/>
                     <field name="filename" invisible="1"/>

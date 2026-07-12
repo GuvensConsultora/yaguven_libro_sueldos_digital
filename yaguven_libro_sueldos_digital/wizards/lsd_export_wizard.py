@@ -60,6 +60,22 @@ class LsdExportWizard(models.TransientModel):
     company_id = fields.Many2one(
         'res.company', 'Compañía', required=True,
         default=lambda s: s.env.company)
+    # Lety presenta 3 liquidaciones separadas por periodo (confirmado contra
+    # los PDF reales de ARCA de mayo/2026): mensualizados, jornalizados, y
+    # aparte cualquier empleado con baja ese mes (ej. Beron en mayo, Silva en
+    # junio). 'todos' junta todo en una sola liquidacion (uso puntual/legacy).
+    grupo = fields.Selection(
+        [('todos', 'Todos'), ('mensualizados', 'Mensualizados'),
+         ('jornalizados', 'Jornalizados'), ('individual', 'Empleados puntuales (baja)')],
+        'Grupo', default='todos', required=True)
+    employee_ids = fields.Many2many(
+        'hr.employee', string='Empleados a incluir',
+        help='Solo si Grupo = "Empleados puntuales": define exactamente quien '
+             'entra en esta liquidacion (ej. el empleado con baja ese mes).')
+    excluir_employee_ids = fields.Many2many(
+        'hr.employee', 'lsd_wizard_excluir_rel', string='Empleados a excluir',
+        help='Para Mensualizados/Jornalizados/Todos: saca a estos empleados del '
+             'grupo (van en su propia liquidacion individual aparte, ej. bajas).')
     file = fields.Binary('Archivo LSD', readonly=True)
     filename = fields.Char('Nombre', readonly=True)
     log = fields.Text('Resultado', readonly=True)
@@ -112,6 +128,15 @@ class LsdExportWizard(models.TransientModel):
             domain += [('date_to', '=', d_to), ('name', 'ilike', 'Aguinaldo')]
         else:
             domain += [('date_from', '=', d_from)]
+        if self.grupo == 'individual':
+            domain += [('employee_id', 'in', self.employee_ids.ids)]
+        else:
+            if self.grupo == 'mensualizados':
+                domain += [('contract_id.wage_type', '=', 'monthly')]
+            elif self.grupo == 'jornalizados':
+                domain += [('contract_id.wage_type', '=', 'hourly')]
+            if self.excluir_employee_ids:
+                domain += [('employee_id', 'not in', self.excluir_employee_ids.ids)]
         return self.env['hr.payslip'].search(domain)
 
     # ── Registro 03: conceptos + bruta ────────────────────────────────────────
