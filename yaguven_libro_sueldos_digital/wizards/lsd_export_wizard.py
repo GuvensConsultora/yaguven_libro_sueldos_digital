@@ -160,7 +160,7 @@ class LsdExportWizard(models.TransientModel):
                 redondeo = total
             if abs(total) < 0.005:
                 continue
-            if code.startswith('PAT_'):
+            if code.startswith('PAT_') or code.endswith('_GROSS') or code.endswith('_NET'):
                 continue
             xr = str(line.salary_rule_id.x_codigo_recibo or '')
             if xr in XR_EXCLUIR:
