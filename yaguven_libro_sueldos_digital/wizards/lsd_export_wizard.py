@@ -14,12 +14,10 @@ Logica financiera validada contra los 3 TXT reales de Tango (mayo 2026):
 - La captura de la bruta contempla las 3 estructuras (UOM/ASS/FOEVA_GROSS).
 """
 import base64
-import csv
 import logging
 
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError
-from odoo.modules.module import get_module_resource
 
 _logger = logging.getLogger(__name__)
 
@@ -31,17 +29,6 @@ DETRAC_COMPLETA = 7003.68
 DETRAC_MEDIA = 3501.84
 # x_codigo_recibo que NO son conceptos del reg03 (bruta/neto/patronales).
 XR_EXCLUIR = {'199', '999', '500', '501', '502', '503', '504'}
-# Override: la RG obliga a colapsar todas las variantes de OS a un unico
-# codigo ARCA, sin importar cual sea la obra social puntual del empleado
-# (confirmado contra el catalogo ARCA descargado 2026-07-01: OSUOMRA/OSDEPYM/
-# OSECAC/etc. caen todas en 810002; la OS concreta se distingue via el RNOS
-# del reg04, no via el concepto del reg03). Cuota sindical, SVS y demas SI
-# resuelven bien via la tabla tango->arca (sus x_codigo_recibo son codigos
-# Tango reales que estan en el catalogo).
-ARCA_OS = '810002'
-# Redondeo: codigo ARCA 799999 (no remunerativo), no el codigo interno de
-# Tango (599) que se usaba antes.
-ARCA_REDONDEO = '799999'
 
 
 class LsdExportWizard(models.TransientModel):
@@ -127,27 +114,17 @@ class LsdExportWizard(models.TransientModel):
             domain += [('date_from', '=', d_from)]
         return self.env['hr.payslip'].search(domain)
 
-    # ── Tabla Tango → ARCA (conceptos del reg03) ──────────────────────────────
-    def _tango_arca_map(self):
-        """Codigo contribuyente (Tango) -> Codigo AFIP (ARCA)."""
-        path = get_module_resource(
-            'yaguven_libro_sueldos_digital', 'data', 'tango_arca_conceptos.csv')
-        mapping = {}
-        with open(path, encoding='utf-8') as f:
-            reader = csv.reader(f, delimiter=';')
-            next(reader)  # header
-            for row in reader:
-                cod_afip, cod_contrib = row[0], row[2]
-                mapping.setdefault(cod_contrib, cod_afip)
-        return mapping
-
     # ── Registro 03: conceptos + bruta ────────────────────────────────────────
-    def _conceptos_y_bruta(self, payslip, tango_arca, no_mapeados):
+    def _conceptos_y_bruta(self, payslip):
         """Devuelve (lista de (concepto, importe, dc), gross, redondeo, bruta).
 
-        tango_arca: dict Codigo contribuyente -> Codigo AFIP (ver _tango_arca_map).
-        no_mapeados: set compartido donde se acumulan los codigos Tango sin
-        equivalente ARCA encontrado (para loguearlos, nunca emitirlos crudos).
+        El campo 3 del reg03 es el codigo PROPIO del empleador (x_codigo_recibo,
+        el mismo que aparece impreso en el recibo de Tango), no un codigo ARCA
+        traducido -- la asociacion codigo propio -> concepto ARCA ya esta
+        registrada de antes en la seccion "Conceptos" del portal LSD (ver
+        fuente/arca_conceptos_relacionados_2026-07-01.txt, bajado de ahi).
+        Poner el codigo ARCA directo en este campo lo rechaza con "Codigo de
+        concepto inexistente" (confirmado al intentar subir el TXT de junio).
         """
         conceptos = []
         gross = redondeo = 0.0
@@ -166,24 +143,17 @@ class LsdExportWizard(models.TransientModel):
             if xr in XR_EXCLUIR:
                 continue
             if code in ('UOM_OS', 'ASS_OS', 'FOEVA_OS'):
-                concepto = ARCA_OS
-            elif 'REDONDEO' in code:
-                concepto = ARCA_REDONDEO
+                os_ = payslip.contract_id.obra_social_id
+                concepto = str(os_.codigo_lsd if os_ else '' or xr or '')
             else:
-                concepto = tango_arca.get(xr)
-                if not concepto:
-                    no_mapeados.add((xr, line.name))
-                    continue
+                concepto = xr
+            if not concepto:
+                continue
             dc = 'C' if total >= 0 else 'D'
-            # REMUN_DEBIT se chequea contra el codigo Tango (xr), no el ARCA
-            # ya traducido -- varios codigos Tango distintos (credito y
-            # debito) pueden colapsar al mismo concepto ARCA (ej. Falta
-            # injustificada y Sueldo Basico caen los dos en 110000).
-            conceptos.append((concepto, round(abs(total), 2), dc, xr))
-        cred = sum(i for c, i, dc, xr in conceptos if dc == 'C')
-        deb_rem = sum(i for c, i, dc, xr in conceptos if dc == 'D' and xr in REMUN_DEBIT)
+            conceptos.append((concepto, round(abs(total), 2), dc))
+        cred = sum(i for c, i, dc in conceptos if dc == 'C')
+        deb_rem = sum(i for c, i, dc in conceptos if dc == 'D' and c in REMUN_DEBIT)
         bruta = round(cred - deb_rem, 2)
-        conceptos = [(c, i, dc) for c, i, dc, xr in conceptos]
         return conceptos, round(gross, 2), round(redondeo, 2), bruta
 
     def _build_reg03(self, cuil, conceptos):
@@ -266,8 +236,6 @@ class LsdExportWizard(models.TransientModel):
         reg02_03 = []
         reg04 = []
         n = 0
-        no_mapeados = set()
-        tango_arca = self._tango_arca_map()
         # Reg02 campo tope: '000' = usa tope mensual completo (base 30 dias);
         # el SAC usa tope base 180. No es una preferencia del usuario, es una
         # regla fija de la RG -- se calcula acá, no se toma de self.dias_base.
@@ -281,7 +249,7 @@ class LsdExportWizard(models.TransientModel):
             if not ps.contract_id:
                 log.append(f'  SKIP {emp.name}: sin contrato')
                 continue
-            conceptos, gross, redondeo, bruta = self._conceptos_y_bruta(ps, tango_arca, no_mapeados)
+            conceptos, gross, redondeo, bruta = self._conceptos_y_bruta(ps)
             # reg02
             legajo = emp.barcode or ''
             fpago = (self.fecha_pago or self._rango_periodo()[1])
@@ -312,11 +280,6 @@ class LsdExportWizard(models.TransientModel):
         self.file = base64.b64encode(txt.encode('latin-1', errors='replace'))
         self.filename = 'LSD_%s.txt' % self._periodo()
         log.append('')
-        if no_mapeados:
-            log.append('⚠ Codigos Tango SIN equivalente ARCA (omitidos del reg03, revisar):')
-            for xr, nombre in sorted(no_mapeados):
-                log.append(f'    {xr or "(vacio)":>6} - {nombre}')
-            log.append('')
         log.append(f'=== Generado: {n} trabajadores, {len(lines)} líneas ===')
         self.log = '\n'.join(log)
         self.state = 'done'
