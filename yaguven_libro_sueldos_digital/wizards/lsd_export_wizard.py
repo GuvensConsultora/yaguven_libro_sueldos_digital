@@ -305,7 +305,10 @@ class LsdExportWizard(models.TransientModel):
             raise UserError(_('Reg01 mal formado (%s)') % len(r01))
 
         lines = [r01] + reg02_03 + reg04
-        txt = '\r\n'.join(lines) + '\r\n'
+        # Sin \r\n final: con el terminador de mas, el parser de ARCA lee una
+        # linea 414 fantasma vacia ("El tipo de Registro ... es invalido: ''"),
+        # confirmado al intentar subir el TXT.
+        txt = '\r\n'.join(lines)
         self.file = base64.b64encode(txt.encode('latin-1', errors='replace'))
         self.filename = 'LSD_%s.txt' % self._periodo()
         log.append('')
