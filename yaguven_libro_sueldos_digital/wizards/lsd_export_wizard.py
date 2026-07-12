@@ -129,28 +129,26 @@ class LsdExportWizard(models.TransientModel):
 
     # ── Tabla Tango → ARCA (conceptos del reg03) ──────────────────────────────
     def _tango_arca_map(self):
-        """Codigo contribuyente (Tango) -> Codigo AFIP (ARCA). Cacheado por wizard."""
-        if not hasattr(self, '_tango_arca_map_cache'):
-            path = get_module_resource(
-                'yaguven_libro_sueldos_digital', 'data', 'tango_arca_conceptos.csv')
-            mapping = {}
-            with open(path, encoding='utf-8') as f:
-                reader = csv.reader(f, delimiter=';')
-                next(reader)  # header
-                for row in reader:
-                    cod_afip, cod_contrib = row[0], row[2]
-                    mapping.setdefault(cod_contrib, cod_afip)
-            self._tango_arca_map_cache = mapping
-        return self._tango_arca_map_cache
+        """Codigo contribuyente (Tango) -> Codigo AFIP (ARCA)."""
+        path = get_module_resource(
+            'yaguven_libro_sueldos_digital', 'data', 'tango_arca_conceptos.csv')
+        mapping = {}
+        with open(path, encoding='utf-8') as f:
+            reader = csv.reader(f, delimiter=';')
+            next(reader)  # header
+            for row in reader:
+                cod_afip, cod_contrib = row[0], row[2]
+                mapping.setdefault(cod_contrib, cod_afip)
+        return mapping
 
     # ── Registro 03: conceptos + bruta ────────────────────────────────────────
-    def _conceptos_y_bruta(self, payslip, no_mapeados):
+    def _conceptos_y_bruta(self, payslip, tango_arca, no_mapeados):
         """Devuelve (lista de (concepto, importe, dc), gross, redondeo, bruta).
 
+        tango_arca: dict Codigo contribuyente -> Codigo AFIP (ver _tango_arca_map).
         no_mapeados: set compartido donde se acumulan los codigos Tango sin
         equivalente ARCA encontrado (para loguearlos, nunca emitirlos crudos).
         """
-        tango_arca = self._tango_arca_map()
         conceptos = []
         gross = redondeo = 0.0
         for line in payslip.line_ids:
@@ -269,6 +267,7 @@ class LsdExportWizard(models.TransientModel):
         reg04 = []
         n = 0
         no_mapeados = set()
+        tango_arca = self._tango_arca_map()
         # Reg02 campo tope: '000' = usa tope mensual completo (base 30 dias);
         # el SAC usa tope base 180. No es una preferencia del usuario, es una
         # regla fija de la RG -- se calcula acá, no se toma de self.dias_base.
@@ -282,7 +281,7 @@ class LsdExportWizard(models.TransientModel):
             if not ps.contract_id:
                 log.append(f'  SKIP {emp.name}: sin contrato')
                 continue
-            conceptos, gross, redondeo, bruta = self._conceptos_y_bruta(ps, no_mapeados)
+            conceptos, gross, redondeo, bruta = self._conceptos_y_bruta(ps, tango_arca, no_mapeados)
             # reg02
             legajo = emp.barcode or ''
             fpago = (self.fecha_pago or self._rango_periodo()[1])
