@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="arca_ficha_wizard_view_form" model="ir.ui.view">
+        <field name="name">arca.ficha.wizard.view.form</field>
+        <field name="model">arca.ficha.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Ficha ARCA (Alta/Baja)">
+                <group>
+                    <field name="employee_id"/>
+                    <field name="contract_id"/>
+                    <field name="tipo" widget="radio"/>
+                </group>
+                <group string="Datos para el ALTA (Simplificación Registral)" invisible="tipo != 'alta'">
+                    <group>
+                        <field name="x_cuil"/>
+                        <field name="x_domicilio_explotacion"/>
+                        <field name="x_fecha_inicio"/>
+                        <field name="x_fecha_fin"/>
+                        <field name="x_modalidad_contratacion"/>
+                        <field name="x_situacion_revista"/>
+                    </group>
+                    <group>
+                        <field name="x_obra_social"/>
+                        <field name="x_convenio_cct"/>
+                        <field name="x_categoria"/>
+                        <field name="x_puesto_desempenado"/>
+                        <field name="x_retribucion_pactada"/>
+                        <field name="x_modalidad_liquidacion"/>
+                    </group>
+                    <group string="A completar a mano si corresponde">
+                        <field name="x_trabajador_agropecuario"/>
+                        <field name="x_tipo_servicio"/>
+                    </group>
+                </group>
+                <group string="Datos para la BAJA (Simplificación Registral)" invisible="tipo != 'baja'">
+                    <group>
+                        <field name="x_cuil"/>
+                        <field name="x_fecha_baja"/>
+                        <field name="x_motivo_baja"/>
+                        <field name="x_fecha_telegrama_renuncia"/>
+                    </group>
+                    <group>
+                        <field name="x_convenio_cct"/>
+                        <field name="x_categoria"/>
+                        <field name="x_puesto_desempenado"/>
+                        <field name="x_tipo_servicio"/>
+                    </group>
+                </group>
+                <footer>
+                    <button string="Cerrar" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="arca_ficha_wizard_action" model="ir.actions.act_window">
+        <field name="name">Ficha ARCA (Alta/Baja)</field>
+        <field name="res_model">arca.ficha.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+</odoo>

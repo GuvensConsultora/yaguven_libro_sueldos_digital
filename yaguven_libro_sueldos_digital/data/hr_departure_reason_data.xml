@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        Catálogo oficial "Código de Situación / Motivo de Baja" de Simplificación
+        Registral (ARCA). Fuente: tabla publicada por ARCA (código 21), edición 002,
+        28/01/2026 — https://www.arca.gob.ar/genericos/organismosSegSocial/archivos/
+        misimplificacion-21situacion_baja_27movimientos.pdf
+        Se incluyen únicamente los códigos de "MOTIVO DE BAJA" vigentes (período
+        hasta = 999999); se excluyen las variantes históricas ya cerradas
+        (p.ej. Decreto 796/97, cerradas en 2001).
+    -->
+    <data noupdate="1">
+        <record id="hr_departure_reason_arca_00" model="hr.departure.reason">
+            <field name="name">Baja por fallecimiento</field>
+            <field name="x_codigo_arca">0</field>
+        </record>
+        <record id="hr_departure_reason_arca_02" model="hr.departure.reason">
+            <field name="name">Bajas otras causales</field>
+            <field name="x_codigo_arca">2</field>
+        </record>
+        <record id="hr_departure_reason_arca_07" model="hr.departure.reason">
+            <field name="name">Baja por despido</field>
+            <field name="x_codigo_arca">7</field>
+        </record>
+        <record id="hr_departure_reason_arca_18" model="hr.departure.reason">
+            <field name="name">Transferencia del contrato de trabajo (Art. 225 LCT)</field>
+            <field name="x_codigo_arca">18</field>
+        </record>
+        <record id="hr_departure_reason_arca_19" model="hr.departure.reason">
+            <field name="name">Denuncia del contrato por transferencia de establecimiento (Art. 226 LCT)</field>
+            <field name="x_codigo_arca">19</field>
+        </record>
+        <record id="hr_departure_reason_arca_20" model="hr.departure.reason">
+            <field name="name">Cesión del personal (Art. 229 LCT)</field>
+            <field name="x_codigo_arca">20</field>
+        </record>
+        <record id="hr_departure_reason_arca_21" model="hr.departure.reason">
+            <field name="name">Renuncia del trabajador (Art. 240 LCT)</field>
+            <field name="x_codigo_arca">21</field>
+        </record>
+        <record id="hr_departure_reason_arca_22" model="hr.departure.reason">
+            <field name="name">Voluntad concurrente de las partes / mutuo acuerdo (Art. 241 LCT)</field>
+            <field name="x_codigo_arca">22</field>
+        </record>
+        <record id="hr_departure_reason_arca_23" model="hr.departure.reason">
+            <field name="name">Denuncia del contrato por el empleador (Art. 242 LCT)</field>
+            <field name="x_codigo_arca">23</field>
+        </record>
+        <record id="hr_departure_reason_arca_24" model="hr.departure.reason">
+            <field name="name">Denuncia del contrato por el trabajador (Art. 242 LCT)</field>
+            <field name="x_codigo_arca">24</field>
+        </record>
+        <record id="hr_departure_reason_arca_25" model="hr.departure.reason">
+            <field name="name">Abandono del trabajo (Art. 244 LCT)</field>
+            <field name="x_codigo_arca">25</field>
+        </record>
+        <record id="hr_departure_reason_arca_26" model="hr.departure.reason">
+            <field name="name">Despido (Art. 245 LCT)</field>
+            <field name="x_codigo_arca">26</field>
+        </record>
+        <record id="hr_departure_reason_arca_27" model="hr.departure.reason">
+            <field name="name">Falta o disminución de trabajo (Art. 247 LCT)</field>
+            <field name="x_codigo_arca">27</field>
+        </record>
+        <record id="hr_departure_reason_arca_28" model="hr.departure.reason">
+            <field name="name">Fuerza mayor (Art. 247 LCT)</field>
+            <field name="x_codigo_arca">28</field>
+        </record>
+        <record id="hr_departure_reason_arca_29" model="hr.departure.reason">
+            <field name="name">Fallecimiento del empleador (Art. 249 LCT)</field>
+            <field name="x_codigo_arca">29</field>
+        </record>
+        <record id="hr_departure_reason_arca_30" model="hr.departure.reason">
+            <field name="name">Vencimiento de plazo (Art. 250 LCT)</field>
+            <field name="x_codigo_arca">30</field>
+        </record>
+        <record id="hr_departure_reason_arca_31" model="hr.departure.reason">
+            <field name="name">Quiebra del empleador (Art. 251 LCT)</field>
+            <field name="x_codigo_arca">31</field>
+        </record>
+        <record id="hr_departure_reason_arca_32" model="hr.departure.reason">
+            <field name="name">Concurso del empleador (Art. 251 LCT)</field>
+            <field name="x_codigo_arca">32</field>
+        </record>
+        <record id="hr_departure_reason_arca_33" model="hr.departure.reason">
+            <field name="name">Jubilación (Art. 252 LCT)</field>
+            <field name="x_codigo_arca">33</field>
+        </record>
+        <record id="hr_departure_reason_arca_34" model="hr.departure.reason">
+            <field name="name">Incapacidad o inhabilidad del trabajador (Art. 254 LCT)</field>
+            <field name="x_codigo_arca">34</field>
+        </record>
+        <record id="hr_departure_reason_arca_35" model="hr.departure.reason">
+            <field name="name">Voluntad concurrente de las partes - Trabajo Agrario (Art. 64 inc. b, Ley 22.248)</field>
+            <field name="x_codigo_arca">35</field>
+        </record>
+        <record id="hr_departure_reason_arca_36" model="hr.departure.reason">
+            <field name="name">Despido con o sin justa causa - Trabajo Agrario (Art. 64 inc. c, Ley 22.248)</field>
+            <field name="x_codigo_arca">36</field>
+        </record>
+        <record id="hr_departure_reason_arca_37" model="hr.departure.reason">
+            <field name="name">Despido por fuerza mayor - Trabajo Agrario (Art. 64 inc. d, Ley 22.248)</field>
+            <field name="x_codigo_arca">37</field>
+        </record>
+        <record id="hr_departure_reason_arca_38" model="hr.departure.reason">
+            <field name="name">Fin de contrato de aprendizaje o pasantía</field>
+            <field name="x_codigo_arca">38</field>
+        </record>
+        <record id="hr_departure_reason_arca_39" model="hr.departure.reason">
+            <field name="name">Despido (Art. 5 Ley 25.371)</field>
+            <field name="x_codigo_arca">39</field>
+        </record>
+        <record id="hr_departure_reason_arca_40" model="hr.departure.reason">
+            <field name="name">Cesantía laboral</field>
+            <field name="x_codigo_arca">40</field>
+        </record>
+        <record id="hr_departure_reason_arca_41" model="hr.departure.reason">
+            <field name="name">Exoneración</field>
+            <field name="x_codigo_arca">41</field>
+        </record>
+        <record id="hr_departure_reason_arca_46" model="hr.departure.reason">
+            <field name="name">Inicio pago retiro voluntario (Dec. 263/2018 y otros)</field>
+            <field name="x_codigo_arca">46</field>
+        </record>
+        <record id="hr_departure_reason_arca_47" model="hr.departure.reason">
+            <field name="name">Fin pago retiro voluntario (Dec. 263/2018 y otros)</field>
+            <field name="x_codigo_arca">47</field>
+        </record>
+        <record id="hr_departure_reason_arca_52" model="hr.departure.reason">
+            <field name="name">Extinción por mutuo acuerdo de las partes (Art. 241 Ley 20.744)</field>
+            <field name="x_codigo_arca">52</field>
+        </record>
+        <record id="hr_departure_reason_arca_53" model="hr.departure.reason">
+            <field name="name">Baja de oficio por denuncia</field>
+            <field name="x_codigo_arca">53</field>
+        </record>
+        <record id="hr_departure_reason_arca_54" model="hr.departure.reason">
+            <field name="name">Baja por retiro anticipado o voluntario</field>
+            <field name="x_codigo_arca">54</field>
+        </record>
+        <record id="hr_departure_reason_arca_55" model="hr.departure.reason">
+            <field name="name">Traspaso de personal / RIGI (Ley 27.742)</field>
+            <field name="x_codigo_arca">55</field>
+        </record>
+        <record id="hr_departure_reason_arca_99" model="hr.departure.reason">
+            <field name="name">Vencimiento de contrato a plazo fijo o determinado</field>
+            <field name="x_codigo_arca">99</field>
+        </record>
+    </data>
+</odoo>

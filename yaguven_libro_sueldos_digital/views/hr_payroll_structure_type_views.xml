@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="hr_payroll_structure_type_view_form_lsd" model="ir.ui.view">
+        <field name="name">hr.payroll.structure.type.view.form.lsd</field>
+        <field name="model">hr.payroll.structure.type</field>
+        <field name="inherit_id" ref="hr_payroll.hr_payroll_structure_type_view_form"/>
+        <field name="arch" type="xml">
+            <field name="wage_type" position="after">
+                <field name="x_numero_cct" placeholder="ej. 260/75"/>
+            </field>
+        </field>
+    </record>
+
+</odoo>
