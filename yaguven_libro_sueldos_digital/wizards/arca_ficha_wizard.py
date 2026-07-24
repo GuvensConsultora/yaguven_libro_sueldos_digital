@@ -68,12 +68,12 @@ class ArcaFichaWizard(models.TransientModel):
             wiz.x_fecha_inicio = c.date_start if c else False
             wiz.x_fecha_fin = c.date_end if c else False
             wiz.x_modalidad_contratacion = (
-                f'{c.contract_type_id.code} - {c.contract_type_id.name}'
+                ' - '.join(filter(None, [c.contract_type_id.code, c.contract_type_id.name]))
                 if c and c.contract_type_id else ''
             )
             wiz.x_situacion_revista = c.x_situacion_revista if c else ''
             wiz.x_obra_social = (
-                f'{c.obra_social_id.codigo_os_dgi} - {c.obra_social_id.name}'
+                ' - '.join(filter(None, [c.obra_social_id.codigo_os_dgi, c.obra_social_id.name]))
                 if c and c.obra_social_id else ''
             )
             wiz.x_convenio_cct = (
@@ -88,6 +88,7 @@ class ArcaFichaWizard(models.TransientModel):
             )
             wiz.x_fecha_baja = emp.departure_date
             wiz.x_motivo_baja = (
-                f'{emp.departure_reason_id.x_codigo_arca} - {emp.departure_reason_id.name}'
-                if emp.departure_reason_id else ''
+                ' - '.join(filter(None, [
+                    emp.departure_reason_id.x_codigo_arca, emp.departure_reason_id.name,
+                ])) if emp.departure_reason_id else ''
             )
