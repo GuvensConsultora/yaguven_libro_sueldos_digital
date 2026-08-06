@@ -201,7 +201,19 @@ class LsdExportWizard(models.TransientModel):
         # contra Tango mayo 2026), completa para el resto.
         detrac = DETRAC_MEDIA if c.x_os_doble else DETRAC_COMPLETA
         b = gross
-        bi = [b, b, b, b, b, 0.0, 0.0, b, b]
+        # Bases 4 y 8 (aportes y contribuciones de obra social): para quien
+        # trabaja menos de la jornada convencional, el convenio obliga a aportar
+        # como si fuera jornada completa, así que la base de obra social es el
+        # doble de la previsional. Es la misma marca con la que se calcula la
+        # detracción de arriba.
+        #
+        # Se ve en la planilla con la que se controla el F.931: los conceptos
+        # aparecen como "O.S.E.C.A.C. (EMPLEADO 1/2 DIA)" y "OMINT (EMPLEADO
+        # 1/2 DIA)", separados del resto. Y en el F.931 de junio la Rem. 4
+        # ($70.354.510,98) supera a la Rem. 1 ($68.265.879,65) exactamente en la
+        # base de esa gente.
+        base_os = b * 2 if c.x_os_doble else b
+        bi = [b, b, b, base_os, b, 0.0, 0.0, base_os, b]
         bi[8] = round(bruta - redondeo, 2)          # NR en ART
         bi10 = round(gross - detrac, 2)
         modalidad = (c.contract_type_id.code or '').strip()
