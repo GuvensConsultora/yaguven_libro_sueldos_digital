@@ -105,6 +105,16 @@ class HrPayslip(models.Model):
         return ''.join(partes)
 
     def _lsd_dias_trabajados(self):
-        """Días a informar: lo cargado, y si no, 30 (el mes completo)."""
+        """Días a informar. Sin nada cargado va '00', como venía.
+
+        La pantalla de ARCA muestra 30 para un mes completo, así que 30 parece
+        lo correcto. Pero los libros presentados hasta ahora fueron con '00' y
+        ARCA los aceptó, y este campo alimenta el cálculo del importe a detraer,
+        que es uno de los controles con los que se cierra el F.931.
+
+        Cambiar el default habría movido los 36 registros del período sin que
+        nadie lo pidiera. Queda como dato explícito: informa lo que se carga, y
+        el que no se carga se comporta igual que antes.
+        """
         self.ensure_one()
-        return str(self.x_dias_trabajados or 30).zfill(2)[-2:]
+        return str(self.x_dias_trabajados or 0).zfill(2)[-2:]
