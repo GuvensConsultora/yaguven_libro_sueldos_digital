@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Espeja el bloque "Datos Complementarios" de la pantalla de carga de
+         Declaración en Línea: los tres tramos de situación de revista con su día
+         de inicio, los días trabajados y el monto de maternidad. -->
+    <record id="hr_payslip_view_form_lsd" model="ir.ui.view">
+        <field name="name">hr.payslip.view.form.lsd</field>
+        <field name="model">hr.payslip</field>
+        <field name="inherit_id" ref="hr_payroll.view_hr_payslip_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Libro de Sueldos Digital (AFIP)" name="lsd_afip">
+                    <group>
+                        <group string="Datos complementarios">
+                            <field name="x_dias_trabajados"/>
+                            <field name="x_maternidad_art13"/>
+                        </group>
+                    </group>
+                    <separator string="Situaciones de revista del período"/>
+                    <p class="text-muted">
+                        Se completa sólo cuando la situación cambia dentro del mes
+                        —por ejemplo, activo desde el día 1 y licencia por
+                        maternidad desde el 15—. Si se deja vacío se informa la
+                        situación del contrato desde el día 1. ARCA admite hasta
+                        tres tramos.
+                    </p>
+                    <field name="x_situacion_revista_ids">
+                        <list editable="bottom">
+                            <field name="dia_inicio"/>
+                            <field name="situacion_id"
+                                   options="{'no_create': True, 'no_open': True}"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

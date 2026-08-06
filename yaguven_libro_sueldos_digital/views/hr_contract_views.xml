@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
+    <!-- La solapa replica el orden y los nombres de la pantalla "Carga manual de
+         liquidaciones y DDJJ" de Declaración en Línea (ARCA), porque quien
+         liquida carga primero ahí y después acá: si las dos pantallas se leen
+         igual, el segundo pase es copiar, no traducir. -->
     <record id="hr_contract_view_form_lsd" model="ir.ui.view">
         <field name="name">hr.contract.view.form.lsd</field>
         <field name="model">hr.contract</field>
@@ -8,14 +12,62 @@
         <field name="arch" type="xml">
             <xpath expr="//page[@name='other']" position="after">
                 <page string="Libro de Sueldos Digital (AFIP)" name="lsd_afip">
+
                     <group>
-                        <group string="Códigos de tabla AFIP">
-                            <field name="x_situacion_revista"/>
-                            <field name="x_condicion"/>
-                            <field name="x_actividad"/>
-                            <field name="x_pct_tarea_diferencial"/>
+                        <group string="Datos generales">
+                            <field name="x_en_convenio"/>
+                            <field name="x_scvo"/>
+                            <field name="x_corresponde_reduccion"/>
+                            <field name="x_tipo_empleador_id"
+                                   options="{'no_create': True, 'no_open': True}"/>
+                            <field name="x_tipo_operacion"/>
+                            <field name="x_base_diferencial_lrt"/>
+                        </group>
+                        <group string="Perfil del trabajador">
+                            <field name="x_situacion_revista_id"
+                                   options="{'no_create': True, 'no_open': True}"/>
+                            <field name="x_condicion_id"
+                                   options="{'no_create': True, 'no_open': True}"/>
+                            <field name="x_actividad_id"
+                                   options="{'no_create': True, 'no_open': True}"/>
+                            <field name="contract_type_id"
+                                   string="Modalidad de contratación"
+                                   options="{'no_create': True, 'no_open': True}"/>
+                            <field name="x_siniestrado_id"
+                                   options="{'no_create': True, 'no_open': True}"/>
+                            <field name="x_localidad_id"
+                                   options="{'no_create': True, 'no_open': True}"/>
                         </group>
                     </group>
+
+                    <group>
+                        <group string="Seguridad social">
+                            <field name="x_aporte_adicional_ss"/>
+                            <field name="x_pct_tarea_diferencial"/>
+                            <field name="x_base_dif_aporte_ss"/>
+                            <field name="x_base_dif_contrib_ss"/>
+                        </group>
+                        <group string="Obra social">
+                            <field name="obra_social_id"
+                                   options="{'no_create': True, 'no_open': True}"/>
+                            <field name="x_adherentes_os"/>
+                            <field name="x_aporte_adic_os"/>
+                            <field name="x_contrib_adic_os"/>
+                            <field name="x_base_dif_aporte_os"/>
+                            <field name="x_base_dif_contrib_os"/>
+                        </group>
+                    </group>
+
+                    <!-- Los campos de texto que reemplazan los many2one de arriba.
+                         Quedan a la vista, plegados, mientras dure la convivencia:
+                         si un contrato quedó sin migrar, se ve acá. -->
+                    <group string="Códigos anteriores (texto)" name="lsd_legacy"
+                           col="4">
+                        <field name="x_situacion_revista" readonly="1"/>
+                        <field name="x_condicion" readonly="1"/>
+                        <field name="x_actividad" readonly="1"/>
+                    </group>
+
                 </page>
             </xpath>
         </field>

@@ -208,32 +208,47 @@ class LsdExportWizard(models.TransientModel):
         # horas trabajadas del recibo (informativo)
         horas = sum(payslip.worked_days_line_ids.mapped('number_of_hours')) or 0
         pct_dif = int(round((c.x_pct_tarea_diferencial or 0) * 100))
+        pct_adic_ss = int(round((c.x_aporte_adicional_ss or 0) * 100))
+        emp = payslip.employee_id
+
+        # Grupo familiar: sale de la ficha del empleado, no del contrato.
+        conyuge = '1' if emp.marital in ('married', 'cohabitant') else '0'
+        hijos = self._num(int(emp.children or 0), 2)
+
+        # Localidad: la del establecimiento donde presta servicios. El valor del
+        # wizard queda como respaldo para los contratos que todavía no la tengan
+        # cargada, pero NO es lo correcto cuando hay más de un establecimiento:
+        # la localidad determina el porcentaje de reducción de contribuciones.
+        localidad = (c.x_localidad_id.codigo if c.x_localidad_id else self.localidad) or ''
+
+        tipo_empleador = (c.x_tipo_empleador_id.codigo if c.x_tipo_empleador_id
+                          else '1')
 
         r = (
             '04'
             + self._num(cuil, 11)                    # 3-13
-            + '0'                                    # 14 cónyuge
-            + '00'                                   # 15-16 hijos
-            + '1'                                    # 17 CCT (convenio)
-            + '1'                                    # 18 SCVO
-            + '0'                                    # 19 reducción
-            + '1'                                    # 20 tipo empleador
-            + '0'                                    # 21 tipo operación
-            + self._num(c.x_situacion_revista, 2)    # 22-23 sit. revista
-            + self._num(c.x_condicion, 2)            # 24-25 condición
-            + self._num(c.x_actividad, 3)            # 26-28 actividad
+            + conyuge                                # 14 cónyuge
+            + hijos                                  # 15-16 hijos
+            + ('1' if c.x_en_convenio else '0')      # 17 CCT (convenio)
+            + ('1' if c.x_scvo else '0')             # 18 SCVO
+            + ('1' if c.x_corresponde_reduccion else '0')   # 19 reducción
+            + self._alf(tipo_empleador, 1)           # 20 tipo empleador
+            + self._alf(c.x_tipo_operacion or '0', 1)       # 21 tipo operación
+            + c._arca_codigo('x_situacion_revista_id', 'x_situacion_revista', 2)
+            + c._arca_codigo('x_condicion_id', 'x_condicion', 2)
+            + c._arca_codigo('x_actividad_id', 'x_actividad', 3)
             + self._num(modalidad, 3)                # 29-31 modalidad contratación
-            + '00'                                   # 32-33 siniestrado
-            + self._alf(self.localidad, 2)           # 34-35 localidad
-            + '01' + '01'                            # 36-39 sit. revista 1 + día
-            + '  00  00'                             # 40-47 slots sit. revista 2/3
-            + '00'                                   # 48-49 días trabajados
+            + self._alf(c.x_siniestrado_id.codigo or '00', 2)   # 32-33 siniestrado
+            + self._alf(localidad, 2)                # 34-35 localidad
+            + payslip._lsd_situaciones()             # 36-47 sit. revista 1/2/3 + días
+            + payslip._lsd_dias_trabajados()         # 48-49 días trabajados
             + self._num(int(horas), 3)               # 50-52 horas trabajadas
-            + '00000'                                # 53-57 % adic. SS
+            + self._num(pct_adic_ss, 5)              # 53-57 % adic. SS
             + self._num(pct_dif, 5)                  # 58-62 % tarea diferencial
             + self._num(rnos, 6)                     # 63-68 RNOS
-            + '00'                                   # 69-70 adherentes OS
-            + self._imp(0) + self._imp(0)            # 71-100 ap/ct adic. OS
+            + self._num(int(c.x_adherentes_os or 0), 2)     # 69-70 adherentes OS
+            + self._imp(c.x_aporte_adic_os or 0)     # 71-85 aporte adic. OS
+            + self._imp(c.x_contrib_adic_os or 0)    # 86-100 contrib. adic. OS
             + '0' * 60                               # 101-160 (reservado)
             + self._imp(bruta)                       # 161-175 remuneración bruta
             + ''.join(self._imp(x) for x in bi)      # 176-310 BI1..BI9

@@ -59,11 +59,20 @@ class ArcaFichaWizard(models.TransientModel):
             c = wiz.contract_id
             company = c.company_id if c else emp.company_id
             wiz.x_cuil = emp.identification_id or ''
+            # Domicilio de explotación: el del establecimiento donde la persona
+            # presta servicios, que no siempre es el de la casa central. Se toma
+            # la dirección laboral del empleado y se cae al domicilio de la
+            # compañía sólo si no tiene una propia.
+            #
+            # No es un detalle de forma: el alta en Simplificación Registral se
+            # hace contra este domicilio, y de él depende además la zona
+            # geográfica con la que se liquidan las contribuciones.
+            domicilio = emp.address_id or company.partner_id
             wiz.x_domicilio_explotacion = ', '.join(filter(None, [
-                company.street,
-                company.city,
-                company.state_id.name if company.state_id else '',
-                company.zip,
+                domicilio.street,
+                domicilio.city,
+                domicilio.state_id.name if domicilio.state_id else '',
+                domicilio.zip,
             ]))
             wiz.x_fecha_inicio = c.date_start if c else False
             wiz.x_fecha_fin = c.date_end if c else False
