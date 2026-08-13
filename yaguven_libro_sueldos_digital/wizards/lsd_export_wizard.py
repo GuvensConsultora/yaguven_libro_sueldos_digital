@@ -164,7 +164,10 @@ class LsdExportWizard(models.TransientModel):
                 continue
             if code.startswith('PAT_') or code.endswith('_GROSS') or code.endswith('_NET'):
                 continue
-            xr = str(line.salary_rule_id.x_codigo_recibo or '')
+            # El codigo puede depender del contrato y no solo de la regla: la
+            # cuota sindical y el seguro de vida de ASIMRA se registran con su
+            # propio codigo aunque los calcule la regla de UOM.
+            xr = str(line.salary_rule_id.codigo_recibo_para(payslip.contract_id))
             if xr in XR_EXCLUIR:
                 continue
             if code in ('UOM_OS', 'ASS_OS', 'FOEVA_OS'):
