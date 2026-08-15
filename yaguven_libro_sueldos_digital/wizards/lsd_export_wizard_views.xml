@@ -23,9 +23,14 @@
                 </group>
                 <group string="Grupo de empleados">
                     <field name="grupo"/>
+                    <!-- active_test=False: al empleado con baja se lo archiva,
+                         y sin esto no aparece en el selector, que es
+                         exactamente a quien hay que elegir acá. -->
                     <field name="employee_ids" widget="many2many_tags"
+                           context="{'active_test': False}"
                            invisible="grupo != 'individual'"/>
                     <field name="excluir_employee_ids" widget="many2many_tags"
+                           context="{'active_test': False}"
                            invisible="grupo == 'individual'"/>
                 </group>
                 <group string="Resultado" invisible="state != 'done'">

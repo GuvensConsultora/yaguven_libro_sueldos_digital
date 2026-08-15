@@ -150,15 +150,24 @@ class LsdExportWizard(models.TransientModel):
             domain += [('date_to', '=', d_to), ('name', 'ilike', 'Aguinaldo')]
         else:
             domain += [('date_from', '=', d_from)]
+        # `active_test=False` no es un detalle: al empleado con baja se lo
+        # archiva, y un m2m NO devuelve registros archivados. Sin esto el
+        # legajo dado de baja desaparece de employee_ids y de
+        # excluir_employee_ids **en silencio** -- justo el caso para el que
+        # existe el grupo 'individual'. Julio 2026: MALDONADO estaba archivado,
+        # la liquidacion de bajas salia con 1 trabajador en vez de 2 y ademas
+        # el tipo se colaba en la de jornalizados, que daba 24 en vez de 23.
+        # El total seguia dando 37, asi que no habia con que darse cuenta.
+        w = self.with_context(active_test=False)
         if self.grupo == 'individual':
-            domain += [('employee_id', 'in', self.employee_ids.ids)]
+            domain += [('employee_id', 'in', w.employee_ids.ids)]
         else:
             if self.grupo == 'mensualizados':
                 domain += [('contract_id.wage_type', '=', 'monthly')]
             elif self.grupo == 'jornalizados':
                 domain += [('contract_id.wage_type', '=', 'hourly')]
-            if self.excluir_employee_ids:
-                domain += [('employee_id', 'not in', self.excluir_employee_ids.ids)]
+            if w.excluir_employee_ids:
+                domain += [('employee_id', 'not in', w.excluir_employee_ids.ids)]
         return self.env['hr.payslip'].search(domain)
 
     # ── Registro 03: conceptos + bruta ────────────────────────────────────────
@@ -310,6 +319,17 @@ class LsdExportWizard(models.TransientModel):
 
         log = [f'=== LSD {self._periodo()} · {self.company_id.name} ===',
                f'Recibos: {len(payslips)}', '']
+
+        # Aviso ruidoso si se eligieron N empleados y no salieron N recibos.
+        # El modo silencioso es el peligroso: el archivo sale con uno menos y
+        # el total del periodo puede seguir cerrando igual.
+        if self.grupo == 'individual':
+            elegidos = self.with_context(active_test=False).employee_ids
+            faltan = elegidos - payslips.mapped('employee_id')
+            if faltan:
+                log.append('  [!] SIN RECIBO en este periodo, quedan afuera: '
+                           + ', '.join(faltan.mapped('name')))
+                log.append('')
         reg02_03 = []
         reg04 = []
         n = 0
