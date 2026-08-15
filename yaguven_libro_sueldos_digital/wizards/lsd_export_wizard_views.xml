@@ -13,6 +13,7 @@
                     </group>
                     <group string="Liquidación">
                         <field name="tipo_liquidacion"/>
+                        <field name="es_sac"/>
                         <field name="modo_envio"/>
                         <field name="nro_liquidacion"/>
                         <field name="dias_base"/>

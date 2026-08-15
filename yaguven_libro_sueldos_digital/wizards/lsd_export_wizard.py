@@ -44,9 +44,31 @@ class LsdExportWizard(models.TransientModel):
          ('12', 'Diciembre')],
         'Mes', required=True,
         default=lambda s: '%02d' % fields.Date.today().month)
+    # El campo del reg01 (posicion 22) dice CADA CUANTO SE PAGA, no que se
+    # paga. El diseno oficial de ARCA admite exactamente tres valores:
+    # 'M'=mes, 'Q'=quincena, 'S'=SEMANAL. No existe un valor para el SAC ni
+    # para la liquidacion final, porque no son tipos de liquidacion: son
+    # liquidaciones mas, del mismo tipo, con sus propios conceptos. Julio 2026
+    # lo confirma: las tres liquidaciones de ARCA salieron 'M', incluida la de
+    # las bajas.
+    #
+    # Estaba etiquetado ('S','SAC') y ('F','Final'). El segundo ARCA lo
+    # rechaza por inexistente, que al menos se nota; el primero es peor,
+    # porque 'S' SI es valido: el aguinaldo se declaraba como liquidacion
+    # semanal y ARCA lo aceptaba en verde. Paso en junio 2026.
     tipo_liquidacion = fields.Selection(
-        [('M', 'Mensual'), ('Q', 'Quincenal'), ('S', 'SAC'), ('F', 'Final')],
-        'Tipo de liquidación', default='M', required=True)
+        [('M', 'Mensual'), ('Q', 'Quincenal'), ('S', 'Semanal')],
+        'Tipo de liquidación', default='M', required=True,
+        help='Periodicidad del pago, tal como la informa ARCA en la cabecera '
+             'del archivo. El aguinaldo y las liquidaciones finales NO son un '
+             'tipo aparte: van como Mensual, y se marcan con las opciones de '
+             'abajo.')
+    es_sac = fields.Boolean(
+        'Es liquidación de SAC (aguinaldo)',
+        help='Marca esta liquidación como la del aguinaldo. Cambia dos cosas: '
+             'toma los recibos de SAC en lugar de los del mes, y usa el tope '
+             'base 180 en vez del mensual. NO cambia el tipo de liquidación, '
+             'que sigue siendo Mensual.')
     modo_envio = fields.Selection(
         [('SJ', 'SJ · Liquidación + F931'), ('RE', 'RE · Solo rectifica F931')],
         'Modo de envío', default='SJ', required=True)
@@ -121,7 +143,7 @@ class LsdExportWizard(models.TransientModel):
             ('state', '!=', 'cancel'),
             ('company_id', '=', self.company_id.id),
         ]
-        if self.tipo_liquidacion == 'S':
+        if self.es_sac:
             # El aguinaldo se procesa como recibo aparte (fecha desde =
             # inicio del semestre, no del mes) -- se identifica por nombre,
             # no por date_from, a diferencia del mensual/quincenal.
@@ -294,7 +316,9 @@ class LsdExportWizard(models.TransientModel):
         # Reg02 campo tope: '000' = usa tope mensual completo (base 30 dias);
         # el SAC usa tope base 180. No es una preferencia del usuario, es una
         # regla fija de la RG -- se calcula acá, no se toma de self.dias_base.
-        tope = '180' if self.tipo_liquidacion == 'S' else '000'
+        # Depende de que la liquidacion SEA del aguinaldo, no del tipo que se
+        # informa en la cabecera: el SAC va como 'M' igual que el resto.
+        tope = '180' if self.es_sac else '000'
         for ps in payslips:
             emp = ps.employee_id
             cuil = (emp.identification_id or '').replace('-', '')
