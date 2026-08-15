@@ -1,6 +1,6 @@
 {
     'name': 'Yagüven - Libro de Sueldos Digital (LSD/F.931)',
-    'version': '18.0.4.4.0',
+    'version': '18.0.5.0.0',
     'summary': 'Exportador del Libro de Sueldos Digital (interfaz AFIP/ARCA) para Declaración en Línea',
     'description': '''
 Libro de Sueldos Digital (LSD)

@@ -63,12 +63,12 @@ class LsdExportWizard(models.TransientModel):
              'del archivo. El aguinaldo y las liquidaciones finales NO son un '
              'tipo aparte: van como Mensual, y se marcan con las opciones de '
              'abajo.')
-    es_sac = fields.Boolean(
-        'Es liquidación de SAC (aguinaldo)',
-        help='Marca esta liquidación como la del aguinaldo. Cambia dos cosas: '
-             'toma los recibos de SAC en lugar de los del mes, y usa el tope '
-             'base 180 en vez del mensual. NO cambia el tipo de liquidación, '
-             'que sigue siendo Mensual.')
+    excluir_bajas = fields.Boolean(
+        'Sacar las bajas del mes', default=True,
+        help='Los empleados con cese en el período van en su propia '
+             'liquidación, así que salen de Mensualizados y de Jornalizados. '
+             'Si no se sacan, aparecen dos veces en el mismo período y ARCA '
+             'rechaza por CUIL duplicado. Destildar sólo si se sabe por qué.')
     modo_envio = fields.Selection(
         [('SJ', 'SJ · Liquidación + F931'), ('RE', 'RE · Solo rectifica F931')],
         'Modo de envío', default='SJ', required=True)
@@ -87,9 +87,18 @@ class LsdExportWizard(models.TransientModel):
     # aparte cualquier empleado con baja ese mes (ej. Beron en mayo, Silva en
     # junio). 'todos' junta todo en una sola liquidacion (uso puntual/legacy).
     grupo = fields.Selection(
-        [('todos', 'Todos'), ('mensualizados', 'Mensualizados'),
-         ('jornalizados', 'Jornalizados'), ('individual', 'Empleados puntuales (baja)')],
-        'Grupo', default='todos', required=True)
+        [('mensualizados', 'Mensualizados'),
+         ('jornalizados', 'Jornalizados'),
+         ('bajas', 'Bajas del mes'),
+         ('sac', 'SAC (aguinaldo)'),
+         ('individual', 'Empleados puntuales'),
+         ('todos', 'Todos (uso puntual)')],
+        'Grupo', default='mensualizados', required=True,
+        help='Qué recibos entran en esta liquidación. Es el único selector que '
+             'decide el contenido: "Bajas del mes" sale sola de la fecha de '
+             'cese y no hay que elegir a nadie, y "SAC" además usa el tope '
+             'base 180. El tipo de liquidación de la cabecera sigue siendo '
+             'Mensual en todos los casos.')
     employee_ids = fields.Many2many(
         'hr.employee', string='Empleados a incluir',
         help='Solo si Grupo = "Empleados puntuales": define exactamente quien '
@@ -143,7 +152,7 @@ class LsdExportWizard(models.TransientModel):
             ('state', '!=', 'cancel'),
             ('company_id', '=', self.company_id.id),
         ]
-        if self.es_sac:
+        if self.grupo == 'sac':
             # El aguinaldo se procesa como recibo aparte (fecha desde =
             # inicio del semestre, no del mes) -- se identifica por nombre,
             # no por date_from, a diferencia del mensual/quincenal.
@@ -161,14 +170,37 @@ class LsdExportWizard(models.TransientModel):
         w = self.with_context(active_test=False)
         if self.grupo == 'individual':
             domain += [('employee_id', 'in', w.employee_ids.ids)]
+        elif self.grupo == 'bajas':
+            domain += [('employee_id', 'in', self._empleados_de_baja().ids)]
         else:
             if self.grupo == 'mensualizados':
                 domain += [('contract_id.wage_type', '=', 'monthly')]
             elif self.grupo == 'jornalizados':
                 domain += [('contract_id.wage_type', '=', 'hourly')]
-            if w.excluir_employee_ids:
-                domain += [('employee_id', 'not in', w.excluir_employee_ids.ids)]
+            # El que se va no se cuenta dos veces: va en su propia liquidacion.
+            # Era un paso manual y por eso se olvidaba -- julio 2026 salio con
+            # 13 mensualizados en vez de 12 porque GUBIOTTI, con cese el 08/07,
+            # no se habia sacado a mano.
+            fuera = w.excluir_employee_ids
+            if self.excluir_bajas:
+                fuera |= self._empleados_de_baja()
+            if fuera:
+                domain += [('employee_id', 'not in', fuera.ids)]
         return self.env['hr.payslip'].search(domain)
+
+    def _empleados_de_baja(self):
+        """Empleados con fecha de cese dentro del periodo liquidado.
+
+        `active_test=False` porque al darlos de baja se los archiva: sin eso el
+        search no los devuelve y volvemos al mismo problema que resolvia.
+        """
+        self.ensure_one()
+        d_from, d_to = self._rango_periodo()
+        return self.env['hr.employee'].with_context(active_test=False).search([
+            ('departure_date', '>=', d_from),
+            ('departure_date', '<=', d_to),
+            ('company_id', '=', self.company_id.id),
+        ])
 
     # ── Registro 03: conceptos + bruta ────────────────────────────────────────
     def _conceptos_y_bruta(self, payslip):
@@ -337,8 +369,10 @@ class LsdExportWizard(models.TransientModel):
         # el SAC usa tope base 180. No es una preferencia del usuario, es una
         # regla fija de la RG -- se calcula acá, no se toma de self.dias_base.
         # Depende de que la liquidacion SEA del aguinaldo, no del tipo que se
-        # informa en la cabecera: el SAC va como 'M' igual que el resto.
-        tope = '180' if self.es_sac else '000'
+        # informa en la cabecera: el SAC va como 'M' igual que el resto. Sale
+        # del mismo selector que decide que recibos entran, para que no puedan
+        # quedar desalineados (antes eran dos campos distintos).
+        tope = '180' if self.grupo == 'sac' else '000'
         for ps in payslips:
             emp = ps.employee_id
             cuil = (emp.identification_id or '').replace('-', '')
