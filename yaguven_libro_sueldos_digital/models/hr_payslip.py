@@ -105,16 +105,30 @@ class HrPayslip(models.Model):
         return ''.join(partes)
 
     def _lsd_dias_trabajados(self):
-        """Días a informar. Sin nada cargado va '00', como venía.
+        """Días a informar, con el mismo criterio que venía usando Tango.
 
-        La pantalla de ARCA muestra 30 para un mes completo, así que 30 parece
-        lo correcto. Pero los libros presentados hasta ahora fueron con '00' y
-        ARCA los aceptó, y este campo alimenta el cálculo del importe a detraer,
-        que es uno de los controles con los que se cierra el F.931.
+        Medido sobre los tres TXT de mayo/2026 que presentó Leticia (los que
+        ARCA aceptó), cruzados contra el tipo de contrato. El corte da 100%
+        limpio, sin una sola excepción:
 
-        Cambiar el default habría movido los 36 registros del período sin que
-        nadie lo pidiera. Queda como dato explícito: informa lo que se carga, y
-        el que no se carga se comporta igual que antes.
+        - jornalizados (24 de 24 `hourly`): días '00' y las horas reales
+        - mensualizados (13 de 13 `monthly`): días '30' y las horas en '000'
+
+        El criterio se explica solo: a quien se le paga por hora se le informan
+        HORAS; a quien se le paga por mes se le informan DÍAS. Cada uno declara
+        la magnitud con la que realmente se mide su trabajo, y por eso el campo
+        que no corresponde va vacío en vez de repetir un número inventado.
+
+        Los días del mensualizado salen del mes comercial (30, prorrateado sólo
+        por alta o baja), no de los días del calendario.
+
+        `x_dias_trabajados` sigue mandando cuando está cargado a mano: es la
+        salida para el caso raro que no entre en la regla.
         """
         self.ensure_one()
-        return str(self.x_dias_trabajados or 0).zfill(2)[-2:]
+        if self.x_dias_trabajados:
+            return str(self.x_dias_trabajados).zfill(2)[-2:]
+        if (self.contract_id.wage_type or '') == 'hourly':
+            return '00'
+        dias = self._dias_mes_comercial()
+        return str(dias if dias is not None else 0).zfill(2)[-2:]

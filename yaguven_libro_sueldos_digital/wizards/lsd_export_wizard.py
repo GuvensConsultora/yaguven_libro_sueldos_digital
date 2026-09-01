@@ -283,8 +283,15 @@ class LsdExportWizard(models.TransientModel):
         bi[8] = round(bruta - redondeo, 2)          # NR en ART
         bi10 = round(gross - detrac, 2)
         modalidad = (c.contract_type_id.code or '').strip()
-        # horas trabajadas del recibo (informativo)
-        horas = sum(payslip.worked_days_line_ids.mapped('number_of_hours')) or 0
+        # Horas trabajadas. Sólo se informan para los jornalizados: en los
+        # mensualizados Tango manda '000' y declara los días en su lugar (ver
+        # payslip._lsd_dias_trabajados()). Antes iba el mismo número para todos
+        # -- las horas TEÓRICAS del calendario, 168 en agosto -- que no describía
+        # a nadie: el que trabajó 40 horas informaba 168 igual que el resto.
+        if (c.wage_type or '') == 'hourly':
+            horas = sum(payslip.worked_days_line_ids.mapped('number_of_hours')) or 0
+        else:
+            horas = 0
         pct_dif = int(round((c.x_pct_tarea_diferencial or 0) * 100))
         pct_adic_ss = int(round((c.x_aporte_adicional_ss or 0) * 100))
         emp = payslip.employee_id
