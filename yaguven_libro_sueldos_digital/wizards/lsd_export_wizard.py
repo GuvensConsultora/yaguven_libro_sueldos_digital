@@ -15,6 +15,7 @@ Logica financiera validada contra los 3 TXT reales de Tango (mayo 2026):
 """
 import base64
 import logging
+import math
 
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError
@@ -29,6 +30,21 @@ DETRAC_COMPLETA = 7003.68
 DETRAC_MEDIA = 3501.84
 # x_codigo_recibo que NO son conceptos del reg03 (bruta/neto/patronales).
 XR_EXCLUIR = {'199', '999', '500', '501', '502', '503', '504'}
+# Reglas que liquidan el aporte de obra social del trabajador. El concepto que
+# viaja al reg03 no sale de la regla sino de la obra social del contrato
+# (payroll.obra_social.codigo_lsd), porque cada OS tiene el suyo.
+OS_APORTE_CODES = {'UOM_OS', 'ASS_OS', 'FOEVA_OS'}
+
+
+def _techo2(valor):
+    """Redondea hacia arriba al centavo, que es como calcula ARCA.
+
+    Medido el 02/09/2026 sobre los tres CUIL de media jornada: para una base de
+    703.821,48 al 3% ARCA reclama 21.114,65 y el producto exacto es 21.114,6444;
+    para 680.674,76 reclama 20.420,25 contra 20.420,2428. Con redondeo normal
+    los dos darian un centavo menos.
+    """
+    return math.ceil(round(valor * 100, 6)) / 100.0
 
 
 class LsdExportWizard(models.TransientModel):
@@ -233,7 +249,7 @@ class LsdExportWizard(models.TransientModel):
             xr = str(line.salary_rule_id.codigo_recibo_para(payslip.contract_id))
             if xr in XR_EXCLUIR:
                 continue
-            if code in ('UOM_OS', 'ASS_OS', 'FOEVA_OS'):
+            if code in OS_APORTE_CODES:
                 os_ = payslip.contract_id.obra_social_id
                 concepto = str(os_.codigo_lsd if os_ else '' or xr or '')
             else:
@@ -267,29 +283,26 @@ class LsdExportWizard(models.TransientModel):
         # contra Tango mayo 2026), completa para el resto.
         detrac = DETRAC_MEDIA if c.x_os_doble else DETRAC_COMPLETA
         b = gross
-        # Bases 4 y 8 (aportes y contribuciones de obra social): para quien
-        # trabaja menos de la jornada convencional, el convenio obliga a aportar
-        # como si fuera jornada completa, así que la base de obra social es el
-        # doble de la previsional. Es la misma marca con la que se calcula la
-        # detracción de arriba.
+        # Bases 4 y 8 (aportes y contribuciones de obra social).
         #
-        # Se ve en la planilla con la que se controla el F.931: los conceptos
-        # aparecen como "O.S.E.C.A.C. (EMPLEADO 1/2 DIA)" y "OMINT (EMPLEADO
-        # 1/2 DIA)", separados del resto. Y en el F.931 de junio la Rem. 4
-        # ($70.354.510,98) supera a la Rem. 1 ($68.265.879,65) exactamente en la
-        # base de esa gente.
-        # El NO REMUNERATIVO va en las bases 4 y 8 (aporte y contribucion de obra
-        # social), NO en la 9. ARCA lo rechazo el 02/09/2026 sobre el libro de
-        # agosto, con el mensaje repetido para 7 CUIL: "La base imponible 4
-        # informada (1.391.114,23) difiere de la determinada (1.491.114,23)" y el
-        # espejo exacto en la 9. La diferencia era siempre $100.000, o sea la
-        # gratificacion mas la compensacion del acuerdo.
+        # El NO REMUNERATIVO integra las dos. ARCA lo rechazo el 02/09/2026 sobre
+        # el libro de agosto, repetido para 7 CUIL: "La base imponible 4
+        # informada (1.391.114,23) difiere de la determinada (1.491.114,23)", y
+        # el espejo exacto en la 9. La diferencia era siempre $100.000, o sea la
+        # gratificacion mas la compensacion del acuerdo. La Clausula Tercera
+        # manda que el no remunerativo pague aportes y contribuciones de obra
+        # social; la 9 es la de LRT/ART, donde no va.
         #
-        # Tiene sentido: la Clausula Tercera manda que el no remunerativo pague
-        # aportes y contribuciones de obra social, asi que integra esas dos bases.
-        # La 9 es la de LRT/ART, donde no va. Antes estaba al reves.
+        # La base NO se duplica para la media jornada. Se duplicaba, y ARCA lo
+        # rechazo el 02/09/2026 para los 3 CUIL con la marca: "La base imponible
+        # 4 informada (1.407.642,96) difiere de la determinada (703.821,48)".
+        # ARCA no lee la base que uno declara: la reconstruye sumando los
+        # conceptos del registro 03 que alimentan la base de obra social -- para
+        # Pehuenche los codigos 1 (sueldo), 2 (antiguedad), 572 y 573 (los dos no
+        # remunerativos), segun el catalogo bajado del portal. Ningun concepto
+        # aporta la otra mitad, asi que la duplicacion no tenia respaldo.
         nr = round(bruta - redondeo - gross, 2)
-        base_os = (b + nr) * 2 if c.x_os_doble else (b + nr)
+        base_os = b + nr
         bi = [b, b, b, base_os, b, 0.0, 0.0, base_os, b]
         bi10 = round(gross - detrac, 2)
         modalidad = (c.contract_type_id.code or '').strip()
@@ -302,6 +315,31 @@ class LsdExportWizard(models.TransientModel):
             horas = sum(payslip.worked_days_line_ids.mapped('number_of_hours')) or 0
         else:
             horas = 0
+        # Campos 28 y 29: aporte y contribucion ADICIONALES de obra social.
+        #
+        # Es el canal por el que se declara que el de media jornada aporta como
+        # jornada completa (art. 92 ter LCT). Antes se resolvia duplicando las
+        # bases 4 y 8, y ARCA lo rechaza (ver arriba): la base la determina el
+        # sistema a partir de los conceptos, no se la puede forzar. Lo que si
+        # acepta es el excedente declarado aparte, y ahi valida
+        #     aporte informado == alicuota x base 4 + campo 28.
+        # Medido el 02/09/2026: con la base ya sin duplicar, ARCA reclamo
+        # "El aporte de obra social calculado es de $21.114,65 y Ud. informa
+        # $42.229,29" -- exactamente la mitad, que es lo que va en el campo 28.
+        #
+        # Las alicuotas salen de la obra social del contrato (3% retencion y 6%
+        # contribucion en las tres de Pehuenche), no de una constante.
+        ap_adic = c.x_aporte_adic_os or 0.0
+        co_adic = c.x_contrib_adic_os or 0.0
+        if c.x_os_doble and os:
+            retenido = round(sum(
+                abs(l.total) for l in payslip.line_ids
+                if (l.code or '') in OS_APORTE_CODES), 2)
+            estandar = _techo2(base_os * (os.porcentaje_retencion or 0.0) / 100.0)
+            # max() por si el recibo no retiene obra social (contrato exento):
+            # sin aporte no hay excedente que declarar.
+            ap_adic += max(0.0, round(retenido - estandar, 2))
+            co_adic += _techo2(base_os * (os.porcentaje_aporte or 0.0) / 100.0)
         pct_dif = int(round((c.x_pct_tarea_diferencial or 0) * 100))
         pct_adic_ss = int(round((c.x_aporte_adicional_ss or 0) * 100))
         emp = payslip.employee_id
@@ -342,8 +380,8 @@ class LsdExportWizard(models.TransientModel):
             + self._num(pct_dif, 5)                  # 58-62 % tarea diferencial
             + self._num(rnos, 6)                     # 63-68 RNOS
             + self._num(int(c.x_adherentes_os or 0), 2)     # 69-70 adherentes OS
-            + self._imp(c.x_aporte_adic_os or 0)     # 71-85 aporte adic. OS
-            + self._imp(c.x_contrib_adic_os or 0)    # 86-100 contrib. adic. OS
+            + self._imp(ap_adic)                     # 71-85 aporte adic. OS
+            + self._imp(co_adic)                     # 86-100 contrib. adic. OS
             + '0' * 60                               # 101-160 (reservado)
             + self._imp(bruta)                       # 161-175 remuneración bruta
             + ''.join(self._imp(x) for x in bi)      # 176-310 BI1..BI9
