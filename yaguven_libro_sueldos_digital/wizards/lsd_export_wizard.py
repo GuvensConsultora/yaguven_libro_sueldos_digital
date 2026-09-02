@@ -278,9 +278,19 @@ class LsdExportWizard(models.TransientModel):
         # 1/2 DIA)", separados del resto. Y en el F.931 de junio la Rem. 4
         # ($70.354.510,98) supera a la Rem. 1 ($68.265.879,65) exactamente en la
         # base de esa gente.
-        base_os = b * 2 if c.x_os_doble else b
+        # El NO REMUNERATIVO va en las bases 4 y 8 (aporte y contribucion de obra
+        # social), NO en la 9. ARCA lo rechazo el 02/09/2026 sobre el libro de
+        # agosto, con el mensaje repetido para 7 CUIL: "La base imponible 4
+        # informada (1.391.114,23) difiere de la determinada (1.491.114,23)" y el
+        # espejo exacto en la 9. La diferencia era siempre $100.000, o sea la
+        # gratificacion mas la compensacion del acuerdo.
+        #
+        # Tiene sentido: la Clausula Tercera manda que el no remunerativo pague
+        # aportes y contribuciones de obra social, asi que integra esas dos bases.
+        # La 9 es la de LRT/ART, donde no va. Antes estaba al reves.
+        nr = round(bruta - redondeo - gross, 2)
+        base_os = (b + nr) * 2 if c.x_os_doble else (b + nr)
         bi = [b, b, b, base_os, b, 0.0, 0.0, base_os, b]
-        bi[8] = round(bruta - redondeo, 2)          # NR en ART
         bi10 = round(gross - detrac, 2)
         modalidad = (c.contract_type_id.code or '').strip()
         # Horas trabajadas. Sólo se informan para los jornalizados: en los
