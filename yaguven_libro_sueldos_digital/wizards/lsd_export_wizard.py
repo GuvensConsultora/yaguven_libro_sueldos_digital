@@ -329,10 +329,17 @@ class LsdExportWizard(models.TransientModel):
         c = payslip.contract_id
         os = c.obra_social_id
         rnos = os.codigo_os_dgi if os else ''
-        # Detracción PyME proporcional a la jornada: media para trabajadores de
-        # media jornada (marca `x_os_doble` = doble aporte OS, verificado 4/4
-        # contra Tango mayo 2026), completa para el resto.
-        detrac = DETRAC_MEDIA if c.x_os_doble else DETRAC_COMPLETA
+        # Detraccion PyME (Ley 27.541), proporcional a la jornada: media para el
+        # de media jornada, completa para el resto.
+        #
+        # Salia de `x_os_doble`, que se usaba como sinonimo de "media jornada"
+        # porque en la practica coincidian. Dejaron de coincidir: CIROLIA tenia
+        # la marca con jornada COMPLETA, y por eso se le declaraba media
+        # detraccion. Se lee de `x_proporcion_jornada`, que es el campo que
+        # describe la jornada y nada mas. Para los tres de media jornada el
+        # resultado no cambia.
+        detrac = (DETRAC_MEDIA if (c.x_proporcion_jornada or 1.0) < 1.0
+                  else DETRAC_COMPLETA)
         # ── Bases imponibles 1 a 9 ────────────────────────────────────────
         # No se declaran: ARCA las DETERMINA sumando los conceptos del registro
         # 03 segun la grilla que el contribuyente tiene registrada en el portal
