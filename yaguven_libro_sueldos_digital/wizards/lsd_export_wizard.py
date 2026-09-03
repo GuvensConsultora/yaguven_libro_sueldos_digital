@@ -232,6 +232,8 @@ class LsdExportWizard(models.TransientModel):
         """
         conceptos = []
         gross = redondeo = 0.0
+        grilla = {c.codigo: c.codigo_afip for c in self.env['lsd.concepto'].search(
+            [('company_id', '=', self.company_id.id)])}
         for line in payslip.line_ids:
             code = line.code or ''
             total = line.total
@@ -257,17 +259,32 @@ class LsdExportWizard(models.TransientModel):
             if not concepto:
                 continue
             dc = 'C' if total >= 0 else 'D'
-            conceptos.append((concepto, round(abs(total), 2), dc))
-        cred = sum(i for c, i, dc in conceptos if dc == 'C')
-        deb_rem = sum(i for c, i, dc in conceptos if dc == 'D' and c in REMUN_DEBIT)
+            # Cantidad y unidad del reg03. Solo se completan donde ARCA las
+            # necesita: el SAC proporcional (concepto ARCA 120003) prorratea su
+            # tope con los dias declarados acá, y sin ellos ARCA lo deja AFUERA
+            # de las bases topeadas. Se vio el 02/09/2026 en la liquidacion
+            # final de GARCIA: "La base imponible 1 informada (361.815,59)
+            # difiere de la determinada (264.494,92)" -- la diferencia eran los
+            # 97.320,67 del aguinaldo -- y el mismo error en la 4 y en la 5, que
+            # son justo las tres bases con tope. Las bases sin tope (2, 3, 8, 9)
+            # no dieron error porque ahi el aguinaldo si entraba.
+            cantidad, unidad = 0.0, ' '
+            if grilla.get(concepto) == '120003':
+                cantidad, unidad = payslip._lsd_dias_sac(), 'D'
+            conceptos.append((concepto, round(abs(total), 2), dc, cantidad, unidad))
+        cred = sum(i for c, i, dc, _q, _u in conceptos if dc == 'C')
+        deb_rem = sum(i for c, i, dc, _q, _u in conceptos
+                      if dc == 'D' and c in REMUN_DEBIT)
         bruta = round(cred - deb_rem, 2)
         return conceptos, round(gross, 2), round(redondeo, 2), bruta
 
     def _build_reg03(self, cuil, conceptos):
         out = []
-        for concepto, importe, dc in conceptos:
-            r = ('03' + self._num(cuil, 11) + concepto.rjust(10) + '00000'
-                 + ' ' + self._imp(importe) + dc + ' ' * 6)
+        for concepto, importe, dc, cantidad, unidad in conceptos:
+            # Campo 4 'Cantidad': 3 enteros + 2 decimales, sin coma.
+            cant = self._num(int(round(float(cantidad) * 100)), 5)
+            r = ('03' + self._num(cuil, 11) + concepto.rjust(10) + cant
+                 + self._alf(unidad, 1) + self._imp(importe) + dc + ' ' * 6)
             if len(r) != 51:
                 raise UserError(_('Reg03 mal formado (%s chars) CUIL %s') % (len(r), cuil))
             out.append(r)
@@ -286,7 +303,7 @@ class LsdExportWizard(models.TransientModel):
         grilla = self.env['lsd.concepto'].grilla(self.company_id)
         bi = [0.0] * 9
         faltantes = []
-        for concepto, importe, dc in conceptos:
+        for concepto, importe, dc, _q, _u in conceptos:
             fila = grilla.get(concepto)
             if fila is None:
                 faltantes.append(concepto)
@@ -356,7 +373,24 @@ class LsdExportWizard(models.TransientModel):
         # contribucion en las tres de Pehuenche), no de una constante.
         ap_adic = c.x_aporte_adic_os or 0.0
         co_adic = c.x_contrib_adic_os or 0.0
-        if c.x_os_doble and os:
+        # Sin obra social nacional no hay nada de obra social que declarar. Lo
+        # dijo ARCA el 02/09/2026 sobre CIROLIA, jubilada en actividad, apenas
+        # se la declaro con la condicion correcta: "el codigo de obra social
+        # debe ser cero" y "No puede especificarse importe adicional de obra
+        # social para esta actividad". Con RNOS y adicionales en cero, entro.
+        #
+        # Quien lo decide es el CODIGO DE CONDICION, no una marca nuestra: la
+        # tabla de ARCA ya dice, por condicion, si genera aportes de obra social
+        # (`arca.codigo.aportes_os`). La condicion 02 'Jubilado' no genera, y es
+        # exactamente el dato que ARCA cruza cuando dice "de acuerdo a los datos
+        # ingresados".
+        if c.x_condicion_id and not c.x_condicion_id.aportes_os:
+            rnos = ''
+            adherentes = 0
+            ap_adic = co_adic = 0.0
+        else:
+            adherentes = int(c.x_adherentes_os or 0)
+        if c.x_os_doble and os and rnos:
             retenido = round(sum(
                 abs(l.total) for l in payslip.line_ids
                 if (l.code or '') in OS_APORTE_CODES), 2)
@@ -404,7 +438,7 @@ class LsdExportWizard(models.TransientModel):
             + self._num(pct_adic_ss, 5)              # 53-57 % adic. SS
             + self._num(pct_dif, 5)                  # 58-62 % tarea diferencial
             + self._num(rnos, 6)                     # 63-68 RNOS
-            + self._num(int(c.x_adherentes_os or 0), 2)     # 69-70 adherentes OS
+            + self._num(adherentes, 2)               # 69-70 adherentes OS
             + self._imp(ap_adic)                     # 71-85 aporte adic. OS
             + self._imp(co_adic)                     # 86-100 contrib. adic. OS
             + '0' * 60                               # 101-160 (reservado)

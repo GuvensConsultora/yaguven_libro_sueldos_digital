@@ -132,3 +132,29 @@ class HrPayslip(models.Model):
             return '00'
         dias = self._dias_mes_comercial()
         return str(dias if dias is not None else 0).zfill(2)[-2:]
+
+    def _lsd_dias_sac(self):
+        """Días devengados del SAC proporcional, para el registro 03.
+
+        El concepto ARCA `120003 SAC proporcional` es el único del rango del
+        aguinaldo que NO usa el tope base 180 fijo: lo prorratea con los días
+        que se declaran acá (Guía 15). Si van en cero, ARCA no puede prorratear
+        el tope y saca el aguinaldo de las tres bases con tope -- la 1, la 4 y
+        la 5 -- dejándolo en las que no lo tienen. Fue el rechazo del 02/09/2026
+        sobre la liquidación final de GARCIA, y se reconoce porque el error
+        aparece en esas tres bases y en ninguna otra.
+
+        Se cuentan desde el inicio del semestre en curso (o desde el ingreso, si
+        es posterior) hasta el cese, o hasta el fin del período si no hay cese.
+        """
+        self.ensure_one()
+        fin = self.date_to
+        baja = self.employee_id.departure_date
+        if baja and baja < fin:
+            fin = baja
+        semestre = fin.replace(month=7 if fin.month > 6 else 1, day=1)
+        inicio = semestre
+        alta = self.contract_id.date_start
+        if alta and alta > inicio:
+            inicio = alta
+        return max(0, (fin - inicio).days + 1)
