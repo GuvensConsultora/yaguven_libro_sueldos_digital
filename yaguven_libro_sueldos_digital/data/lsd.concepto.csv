@@ -1,0 +1,136 @@
+id,codigo,name,codigo_afip,name_afip,aporte_sipa,contrib_sipa,aporte_inssjp,contrib_inssjp,aporte_os,contrib_os,aporte_fsr,contrib_fsr,contrib_aaff,contrib_fne,contrib_lrt,aporte_diferencial,aporte_especial
+lsd_concepto_111,111,IMPORTE A CUENTA DE FUTUROS AUMENTOS,110000,Sueldo,1,1,1,1,1,1,1,1,1,1,1,0,0
+lsd_concepto_74,74,ADICIONAL 30% ENCARGADO FINCA,110000,Sueldo,1,1,1,1,1,1,1,1,1,1,1,0,0
+lsd_concepto_105,105,REMUNERATIVO ABONADO EN FEBR 2024,110000,Sueldo,1,1,1,1,1,1,1,1,1,1,1,0,0
+lsd_concepto_67,67,LICENCIA COVID-19,110000,Sueldo,1,1,1,1,1,1,1,1,1,1,1,0,0
+lsd_concepto_29,29,LIC. POR MUDANZA,110000,Sueldo,1,1,1,1,1,1,1,1,1,1,1,0,0
+lsd_concepto_25,25,LICENCIA POR NACIMIENTO,110000,Sueldo,1,1,1,1,1,1,1,1,1,1,1,0,0
+lsd_concepto_1,1,SUELDO BASICO,110000,Sueldo,1,1,1,1,1,1,1,1,1,1,1,0,0
+lsd_concepto_64,64,HS. CONTRATADOS,110000,Sueldo,1,1,1,1,1,1,1,1,1,1,1,0,0
+lsd_concepto_37,37,LICENCIA ESPECIAL,110000,Sueldo,1,1,1,1,1,1,1,1,1,1,1,0,0
+lsd_concepto_50,50,IMGR-CLAUSULA4Âº ACUERDO21/5/15,110000,Sueldo,1,1,1,1,1,1,1,1,1,1,1,0,0
+lsd_concepto_92,92,LIC. SIN GOCE DE HABERES,110000,Sueldo,1,1,1,1,1,1,1,1,1,1,1,0,0
+lsd_concepto_102,102,Falta injustificada,110000,Sueldo,1,1,1,1,1,1,1,1,1,1,1,0,0
+lsd_concepto_32,32,LICENCIA POR MATERNIDAD,110000,Sueldo,1,1,1,1,1,1,1,1,1,1,1,0,0
+lsd_concepto_57,57,VACACIONES 2020,110000,Sueldo,1,1,1,1,1,1,1,1,1,1,1,0,0
+lsd_concepto_72,72,LIC COVID MENSUALIZADOS,110000,Sueldo,1,1,1,1,1,1,1,1,1,1,1,0,0
+lsd_concepto_73,73,LIC X ENFERMEDAD FINCA,110000,Sueldo,1,1,1,1,1,1,1,1,1,1,1,0,0
+lsd_concepto_13,13,LICENCIA POR DONACION,110006,DonaciÃ³n de sangre,1,1,1,1,1,1,1,1,1,1,1,0,1
+lsd_concepto_26,26,OTRAS LICENCIAS,111000,Sueldo - De uso libre,1,1,1,1,1,1,1,1,1,1,1,0,0
+lsd_concepto_103,103,SUSPENSION,111000,Sueldo - De uso libre,1,1,1,1,1,1,1,1,1,1,1,0,0
+lsd_concepto_48,48,LICENCIA POR ENFERMEDAD,111000,Sueldo - De uso libre,1,1,1,1,1,1,1,1,1,1,1,0,0
+lsd_concepto_10,10,ACCIDENTE DE TRABAJO,111000,Sueldo - De uso libre,1,1,1,1,1,1,1,1,1,1,1,0,0
+lsd_concepto_110,110,RETROACTIVO SAC,111000,Sueldo - De uso libre,1,1,1,1,1,1,1,1,1,1,1,0,0
+lsd_concepto_75,75,GRATIFICACION REMUNERATIVA,111000,Sueldo - De uso libre,1,1,1,1,1,1,1,1,1,1,1,0,0
+lsd_concepto_108,108,AJ REM DIC 24,111000,Sueldo - De uso libre,1,1,1,1,1,1,1,1,1,1,1,0,0
+lsd_concepto_109,109,AJ SAC DIC 24,111000,Sueldo - De uso libre,1,1,1,1,1,1,1,1,1,1,1,0,0
+lsd_concepto_107,107,AJ REM NOV 24,111000,Sueldo - De uso libre,1,1,1,1,1,1,1,1,1,1,1,0,0
+lsd_concepto_104,104,RETROACTIVO JUL 2024,111000,Sueldo - De uso libre,1,1,1,1,1,1,1,1,1,1,1,0,0
+lsd_concepto_31,31,DIF HOMOLOGACION AC JULIO ASIMRA,111000,Sueldo - De uso libre,1,1,1,1,1,1,1,1,1,1,1,0,0
+lsd_concepto_14,14,LICENCIA POR DUELO,111000,Sueldo - De uso libre,1,1,1,1,1,1,1,1,1,1,1,0,0
+lsd_concepto_11,11,FERIADO,111000,Sueldo - De uso libre,1,1,1,1,1,1,1,1,1,1,1,0,0
+lsd_concepto_30,30,DIA DEL METALURGICO,111000,Sueldo - De uso libre,1,1,1,1,1,1,1,1,1,1,1,0,0
+lsd_concepto_6,6,HORAS ENFERMO,111000,Sueldo - De uso libre,1,1,1,1,1,1,1,1,1,1,1,0,0
+lsd_concepto_66,66,LICENCIA COVID-19,111000,Sueldo - De uso libre,1,1,1,1,1,1,1,1,1,1,1,0,0
+lsd_concepto_23,23,AGUINALDO,120000,Sueldo anual complementario,1,1,1,1,1,1,1,1,1,1,1,0,0
+lsd_concepto_8,8,AGUINALDO PROP.,120003,SAC proporcional,1,1,1,1,1,1,1,1,1,1,1,0,0
+lsd_concepto_90,90,Aguinaldo,121000,SAC - De uso libre,1,1,1,1,1,1,1,1,1,1,1,0,0
+lsd_concepto_91,91,AGUINALDO JORNALIZADOS,121000,SAC - De uso libre,1,1,1,1,1,1,1,1,1,1,1,0,0
+lsd_concepto_16,16,VACACIONES NO GOZADAS 2020,151000,Adelanto vacacional - De uso libre,1,1,1,1,1,1,1,1,1,1,1,0,0
+lsd_concepto_9,9,VACACIONES 2020,151000,Adelanto vacacional - De uso libre,1,1,1,1,1,1,1,1,1,1,1,0,0
+lsd_concepto_2,2,ANTIGUEDAD,160001,Adicional por antiguedad,1,1,1,1,1,1,1,1,1,1,1,0,0
+lsd_concepto_34,34,PREMIO POR ASISTENCIA-SOEVA,170001,Premio por presentismo,1,1,1,1,1,1,1,1,1,1,1,0,0
+lsd_concepto_40,40,LICENCIA POR MATERNIDAD,510003,AsignaciÃ³n por maternidad,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_510,510,VACACIONES NO GOZADAS 2020,520012,Vacaciones no gozadas,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_501,501,INDEMNIZACION POR DESPIDO,520014,IndemizaciÃ³n por despido,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_500,500,INDEMNIZACION PREAVISO,520015,IndemizaciÃ³n sustitutiva del preaviso,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_567,567,SAC S/ VAC NO GOZADAS,520018,SAC sobre vacaciones no gozadas,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_566,566,SAC SOBRE ASIG NO REM,550000,Importes no remunerativos especiales,0,0,0,0,1,1,1,1,0,0,1,0,0
+lsd_concepto_565,565,ASIG. NO REM ABRIL 2024,550000,Importes no remunerativos especiales,0,0,0,0,1,1,1,1,0,0,1,0,0
+lsd_concepto_525,525,Gratif. Extraor. No Rem. ASIMRA 24/07/23,550000,Importes no remunerativos especiales,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_569,569,ASIG EXTRAORDINARIA N.R. JULIO 2025,550000,Importes no remunerativos especiales,0,0,0,0,0,0,0,0,0,0,1,0,0
+lsd_concepto_570,570,ASIG EXTRAORDINARIA N.R. AGOSTO 2025,550000,Importes no remunerativos especiales,0,0,0,0,0,0,0,0,0,0,1,0,0
+lsd_concepto_571,571,AJ ASIG POR REFRIG SET SOEVA 2025,550000,Importes no remunerativos especiales,0,0,0,0,0,0,0,0,0,0,1,0,0
+lsd_concepto_572,572,NO REM EXTRAORDINARIO,550000,Importes no remunerativos especiales,0,0,0,0,1,1,1,1,0,0,0,0,0
+lsd_concepto_573,573,NR RETROACTIVO,550000,Importes no remunerativos especiales,0,0,0,0,1,1,1,1,0,0,0,0,0
+lsd_concepto_524,524,Gratif. Extraor. No Rem. UOM 24/07/23,550000,Importes no remunerativos especiales,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_556,556,ASIG NO REM AC SOEVA 2021,550000,Importes no remunerativos especiales,0,0,0,0,0,0,0,0,0,0,1,0,0
+lsd_concepto_563,563,PROGRAMA ENLAZADOS,550000,Importes no remunerativos especiales,0,0,0,0,0,0,0,0,0,0,1,0,0
+lsd_concepto_504,504,INCENTIVO ENLAZADOS,550000,Importes no remunerativos especiales,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_555,555,GRATF NO REM ASIMRA OCT 2022,550000,Importes no remunerativos especiales,0,0,0,0,0,0,0,0,0,0,1,0,0
+lsd_concepto_558,558,ASIG NO REM AC. UOM ADIM AFAC CAM 04/21,550000,Importes no remunerativos especiales,0,0,0,0,0,0,0,0,0,0,1,0,0
+lsd_concepto_561,561,ASIG NO REM AC. ASIM SOBRE SAC,550000,Importes no remunerativos especiales,0,0,0,0,0,0,0,0,0,0,1,0,0
+lsd_concepto_536,536,ASIG EXTR NO REM NOV 2021,550000,Importes no remunerativos especiales,0,0,0,0,0,0,0,0,0,0,1,0,0
+lsd_concepto_506,506,VACACIONES NO GOZADAS 2019,550000,Importes no remunerativos especiales,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_562,562,VACACIONES NO GOZADAS 2021,550000,Importes no remunerativos especiales,0,0,0,0,0,0,0,0,0,0,1,0,0
+lsd_concepto_535,535,COMP.POR REFRIGERIO-SOEVA/21,550000,Importes no remunerativos especiales,0,0,0,0,0,0,0,0,0,0,1,0,0
+lsd_concepto_560,560,SAC no rem Acuerdo UOM 04/21,550000,Importes no remunerativos especiales,0,0,0,0,0,0,0,0,0,0,1,0,0
+lsd_concepto_559,559,ASIG NO REM AC. ASIM ADIM AFAC CAM 04/21,550000,Importes no remunerativos especiales,0,0,0,0,0,0,0,0,0,0,1,0,0
+lsd_concepto_568,568,SUBSIDIO POR FALLECIMIENTO DE FAMILIAR,551000,Importes no remunerativos especiales - De uso libre,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_564,564,BONO DECRETO 841/2022,560005,Asign. No remunerativa Dec 841/2022,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_526,526,ASIG. NO REM DECRETO 438/23,560006,AsignaciÃÂ³n No Remunerativa Dec. 438/2023,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_599,599,Redondeo,799999,Redondeo (No Remunerativo),0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_598,598,REDONDEO,799999,Redondeo (No Remunerativo),0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_200,200,Jubilacion 11%,810000,Sistema previsional,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_201,201,Ley 19.032,810001,INSSJyP,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_257,257,SWISS MEDICAL S.A.,810002,Obra Social,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_267,267,O.S.N.O.B.I.S,810002,Obra Social,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_297,297,O.S.P.E.L.S.Y.M 1/2 DIA,810002,Obra Social,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_296,296,MUTUAL FEDERADA 1/2 DIA,810002,Obra Social,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_240,240,BOREAL,810002,Obra Social,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_239,239,BOREAL 1/2 DIA,810002,Obra Social,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_290,290,OSEYPDEAA (EMPLEADO 1/2 DIA),810002,Obra Social,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_207,207,OSMEDICA,810002,Obra Social,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_215,215,MUTUAL AGUA Y ENERGIA,810002,Obra Social,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_220,220,OSMEDICA S/RESOL.370/04,810002,Obra Social,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_272,272,O.S.D.E.P.Y.M. 1/2 DIA,810002,Obra Social,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_211,211,O.S.E.C.A.C.,810002,Obra Social,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_228,228,O.S.P.O.C.E.,810002,Obra Social,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_226,226,O. S. TRAB. DE ESTAC. DE SERV.,810002,Obra Social,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_263,263,MEDIFE (EMPLEADO 1/2 DIA),810002,Obra Social,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_235,235,OSSIMRA (EMPLEADO 1/2 DIA),810002,Obra Social,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_264,264,O.S.C.E.A.R.B.A,810002,Obra Social,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_229,229,O.S.P.E.L.S.Y.M.,810002,Obra Social,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_279,279,OSPACA (EMPLEADO 1/2 DIA),810002,Obra Social,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_282,282,APORTE OBRA SOCIA S/ GRATIF NO RE 2021,810002,Obra Social,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_265,265,SANCOR SALUD,810002,Obra Social,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_255,255,OMINT  (EMPLEADO 1/2 DIA),810002,Obra Social,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_261,261,O.S.C.E.P.,810002,Obra Social,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_206,206,OSUOMRA,810002,Obra Social,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_266,266,OSPSA - SANIDAD,810002,Obra Social,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_252,252,MUTUAL A.Y ENERGIA(EMP1/2 DIA),810002,Obra Social,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_212,212,O.S. P.A.C.A.,810002,Obra Social,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_256,256,OMINT,810002,Obra Social,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_269,269,OSDEPYME,810002,Obra Social,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_204,204,OSPE,810002,Obra Social,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_289,289,SANCOR (EMPLEADO 1/2 DIA),810002,Obra Social,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_223,223,OSSIMRA,810002,Obra Social,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_217,217,MUTUAL AyE RESOL.370/04,810002,Obra Social,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_237,237,OSUOMRA (EMPLEADO 1/2 DIA),810002,Obra Social,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_230,230,O.S.P.R.E.R.A.,810002,Obra Social,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_253,253,O.S.D.E.,810002,Obra Social,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_262,262,O.S.E.C.A.C.(EMPLEADO 1/2 DIA),810002,Obra Social,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_238,238,OSMEDICA (EMPLEADO 1/2 DIA),810002,Obra Social,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_232,232,APORTE SOLIDARIO FOEVA,810004,Cuota Sindical,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_227,227,CUOTA SINDICAL ASIMRA   2.5%,810004,Cuota Sindical,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_254,254,CUOTA SINDICAL ASIMRA 3%,810004,Cuota Sindical,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_233,233,APORTE SOLIDARIO FOEVA 1.5%,810004,Cuota Sindical,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_203,203,Sindicato,810004,Cuota Sindical,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_219,219,CUOTA SINDICAL NO AFILIADO,810004,Cuota Sindical,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_202,202,CUOTA SINDICAL AFILIADO  2.5 %,810004,Cuota Sindical,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_245,245,DIF SEG DE VIDA FEB-MAR,810005,Seguro de Vida,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_246,246,DIF SEG DE VIDA FEB-MAR ASIMRA,810005,Seguro de Vida,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_291,291,DIF.RET.NOV SEG.VIDA Y SEP U.O.M.,810005,Seguro de Vida,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_292,292,DIF.RET.DIC SEG.VIDA Y SEP U.O.M.,810005,Seguro de Vida,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_218,218,DIF SEG DE VIDA ASIMRA ABR-MAY 2023,810005,Seguro de Vida,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_208,208,SEG.VIDA Y SEPELIO ASSIMRA,810005,Seguro de Vida,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_210,210,SEG.VIDA Y SEPELIO U.O.M.,810005,Seguro de Vida,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_231,231,SEG.VIDA Y SEPELIO SOEVA,810005,Seguro de Vida,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_243,243,APORTE RENATEA,810006,RENATEA (ex RENATRE),0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_288,288,Falta Injustificada,820000,Otros descuentos,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_404,404,EMBARGO JUDICIAL,820000,Otros descuentos,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_402,402,EMBARGO JUDICIAL,820000,Otros descuentos,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_294,294,DIF.RET.NOV SEG.VIDA ASIMRA. 2024,821000,Otros descuentos - De uso libre,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_286,286,DIF.SEG VIDA-SOEVA ABRIL 25,821000,Otros descuentos - De uso libre,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_295,295,DIF.RET.DIC SEG.VIDA ASIMRA. 2024,821000,Otros descuentos - De uso libre,0,0,0,0,0,0,0,0,0,0,0,0,0
+lsd_concepto_293,293,PROGRAMA ENLAZADOS,821000,Otros descuentos - De uso libre,0,0,0,0,0,0,0,0,0,0,0,0,0

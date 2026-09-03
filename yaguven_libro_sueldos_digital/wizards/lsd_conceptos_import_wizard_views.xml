@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_lsd_concepto_list" model="ir.ui.view">
+        <field name="name">lsd.concepto.list</field>
+        <field name="model">lsd.concepto</field>
+        <field name="arch" type="xml">
+            <list string="Conceptos del LSD">
+                <field name="codigo"/>
+                <field name="name"/>
+                <field name="codigo_afip"/>
+                <field name="name_afip"/>
+                <field name="aporte_sipa"/>
+                <field name="contrib_sipa"/>
+                <field name="aporte_inssjp"/>
+                <field name="contrib_inssjp"/>
+                <field name="aporte_os"/>
+                <field name="contrib_os"/>
+                <field name="contrib_lrt"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_lsd_concepto" model="ir.actions.act_window">
+        <field name="name">Conceptos del LSD y sus bases</field>
+        <field name="res_model">lsd.concepto</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="view_lsd_conceptos_import_wizard_form" model="ir.ui.view">
+        <field name="name">lsd.conceptos.import.wizard.form</field>
+        <field name="model">lsd.conceptos.import.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Importar conceptos del portal LSD">
+                <div class="alert alert-info" role="alert">
+                    El archivo se baja de ARCA, en Libro de Sueldos Digital /
+                    Conceptos / "Conceptos del contribuyente" / Exportar.
+                    Trae, por cada concepto, qué bases imponibles integra: es
+                    con eso que el sistema arma las bases del registro 04 igual
+                    que las determina ARCA.
+                </div>
+                <group>
+                    <field name="file" filename="filename"/>
+                    <field name="filename" invisible="1"/>
+                    <field name="company_id" groups="base.group_multi_company"/>
+                </group>
+                <group string="Resultado" invisible="state != 'done'">
+                    <field name="log" nolabel="1" readonly="1"/>
+                </group>
+                <field name="state" invisible="1"/>
+                <footer>
+                    <button name="action_importar" type="object"
+                            string="Importar" class="btn-primary"
+                            invisible="state == 'done'"/>
+                    <button string="Cerrar" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_lsd_conceptos_import_wizard" model="ir.actions.act_window">
+        <field name="name">Importar conceptos del portal LSD</field>
+        <field name="res_model">lsd.conceptos.import.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <menuitem id="menu_lsd_concepto"
+              name="Conceptos del LSD"
+              parent="hr_payroll.menu_hr_payroll_configuration"
+              action="action_lsd_concepto"
+              sequence="60"/>
+
+    <menuitem id="menu_lsd_conceptos_import"
+              name="Importar conceptos del portal LSD"
+              parent="hr_payroll.menu_hr_payroll_configuration"
+              action="action_lsd_conceptos_import_wizard"
+              sequence="61"/>
+</odoo>

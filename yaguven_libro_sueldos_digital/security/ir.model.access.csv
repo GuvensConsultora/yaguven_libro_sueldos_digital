@@ -2,3 +2,6 @@ id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_lsd_export_wizard_user,lsd.export.wizard.user,model_lsd_export_wizard,hr_payroll.group_hr_payroll_user,1,1,1,1
 access_arca_ficha_wizard_user,arca.ficha.wizard.user,model_arca_ficha_wizard,hr_payroll.group_hr_payroll_user,1,1,1,1
 access_hr_payslip_situacion_revista,hr.payslip.situacion.revista,model_hr_payslip_situacion_revista,hr_payroll.group_hr_payroll_user,1,1,1,1
+access_lsd_concepto_user,lsd.concepto.user,model_lsd_concepto,hr_payroll.group_hr_payroll_user,1,0,0,0
+access_lsd_concepto_manager,lsd.concepto.manager,model_lsd_concepto,hr_payroll.group_hr_payroll_manager,1,1,1,1
+access_lsd_conceptos_import_wizard,lsd.conceptos.import.wizard,model_lsd_conceptos_import_wizard,hr_payroll.group_hr_payroll_manager,1,1,1,1

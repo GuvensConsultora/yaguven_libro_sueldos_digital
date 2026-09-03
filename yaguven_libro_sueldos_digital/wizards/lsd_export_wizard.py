@@ -273,8 +273,42 @@ class LsdExportWizard(models.TransientModel):
             out.append(r)
         return out
 
+    # ── Bases imponibles a partir de la grilla de conceptos ───────────────────
+    def _bases_desde_conceptos(self, conceptos, payslip, log):
+        """BI1..BI9 sumando cada concepto por las bases que integra.
+
+        Es la misma cuenta que hace ARCA para determinar las bases, con la
+        grilla que el contribuyente tiene registrada en el portal LSD. Los
+        conceptos en debito restan -- es el caso de 'Falta injustificada', que
+        integra todas las bases y las baja; las retenciones tambien vienen en
+        debito pero tienen la grilla en cero, asi que no mueven nada.
+        """
+        grilla = self.env['lsd.concepto'].grilla(self.company_id)
+        bi = [0.0] * 9
+        faltantes = []
+        for concepto, importe, dc in conceptos:
+            fila = grilla.get(concepto)
+            if fila is None:
+                faltantes.append(concepto)
+                continue
+            signo = -1.0 if dc == 'D' else 1.0
+            for k, marca in enumerate(fila):
+                if marca:
+                    bi[k] += signo * importe
+        if faltantes:
+            # Ruidoso a proposito: un concepto sin grilla sale con base cero y
+            # el archivo se sube igual, pero ARCA lo va a rechazar. Es el mismo
+            # modo de falla silencioso que tenia el calculo escrito a mano.
+            aviso = ('  [!] %s: conceptos sin grilla cargada (%s). Importar la '
+                     'tabla desde el portal LSD.'
+                     % (payslip.employee_id.name, ', '.join(sorted(set(faltantes)))))
+            log.append(aviso)
+            _logger.warning(aviso)
+        return [round(v, 2) for v in bi]
+
     # ── Registro 04: bases F931 + datos administrativos ───────────────────────
-    def _build_reg04(self, payslip, cuil, gross, redondeo, bruta):
+    def _build_reg04(self, payslip, cuil, gross, redondeo, bruta,
+                     conceptos, log):
         c = payslip.contract_id
         os = c.obra_social_id
         rnos = os.codigo_os_dgi if os else ''
@@ -282,28 +316,19 @@ class LsdExportWizard(models.TransientModel):
         # media jornada (marca `x_os_doble` = doble aporte OS, verificado 4/4
         # contra Tango mayo 2026), completa para el resto.
         detrac = DETRAC_MEDIA if c.x_os_doble else DETRAC_COMPLETA
-        b = gross
-        # Bases 4 y 8 (aportes y contribuciones de obra social).
+        # ── Bases imponibles 1 a 9 ────────────────────────────────────────
+        # No se declaran: ARCA las DETERMINA sumando los conceptos del registro
+        # 03 segun la grilla que el contribuyente tiene registrada en el portal
+        # (modelo lsd.concepto). Acá se hace la misma cuenta, para que lo que
+        # informamos coincida con lo que el validador va a reconstruir.
         #
-        # El NO REMUNERATIVO integra las dos. ARCA lo rechazo el 02/09/2026 sobre
-        # el libro de agosto, repetido para 7 CUIL: "La base imponible 4
-        # informada (1.391.114,23) difiere de la determinada (1.491.114,23)", y
-        # el espejo exacto en la 9. La diferencia era siempre $100.000, o sea la
-        # gratificacion mas la compensacion del acuerdo. La Clausula Tercera
-        # manda que el no remunerativo pague aportes y contribuciones de obra
-        # social; la 9 es la de LRT/ART, donde no va.
-        #
-        # La base NO se duplica para la media jornada. Se duplicaba, y ARCA lo
-        # rechazo el 02/09/2026 para los 3 CUIL con la marca: "La base imponible
-        # 4 informada (1.407.642,96) difiere de la determinada (703.821,48)".
-        # ARCA no lee la base que uno declara: la reconstruye sumando los
-        # conceptos del registro 03 que alimentan la base de obra social -- para
-        # Pehuenche los codigos 1 (sueldo), 2 (antiguedad), 572 y 573 (los dos no
-        # remunerativos), segun el catalogo bajado del portal. Ningun concepto
-        # aporta la otra mitad, asi que la duplicacion no tenia respaldo.
-        nr = round(bruta - redondeo - gross, 2)
-        base_os = b + nr
-        bi = [b, b, b, base_os, b, 0.0, 0.0, base_os, b]
+        # Escribirlas a mano fallo tres veces sobre el libro de agosto 2026,
+        # siempre porque la composicion NO depende de si el concepto es
+        # remunerativo sino del concepto: 572 y 573 (no remunerativos de
+        # UOM/ASIMRA) integran obra social y no LRT, mientras 535 y 556 (los de
+        # SOEVA) integran LRT y no obra social. Con la grilla eso sale solo.
+        bi = self._bases_desde_conceptos(conceptos, payslip, log)
+        base_os = bi[3]
         bi10 = round(gross - detrac, 2)
         modalidad = (c.contract_type_id.code or '').strip()
         # Horas trabajadas. Sólo se informan para los jornalizados: en los
@@ -449,7 +474,8 @@ class LsdExportWizard(models.TransientModel):
                 raise UserError(_('Reg02 mal formado (%s) CUIL %s') % (len(r02), cuil))
             reg02_03.append(r02)
             reg02_03.extend(self._build_reg03(cuil, conceptos))
-            reg04.append(self._build_reg04(ps, cuil, gross, redondeo, bruta))
+            reg04.append(self._build_reg04(ps, cuil, gross, redondeo, bruta,
+                                           conceptos, log))
             n += 1
             log.append(f'  OK {legajo:>6} {emp.name[:28]:28} bruta={bruta:,.2f}')
 

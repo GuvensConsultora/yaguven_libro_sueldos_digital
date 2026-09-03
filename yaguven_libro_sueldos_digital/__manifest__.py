@@ -1,6 +1,6 @@
 {
     'name': 'Yagüven - Libro de Sueldos Digital (LSD/F.931)',
-    'version': '18.0.6.2.0',
+    'version': '18.0.7.0.0',
     'summary': 'Exportador del Libro de Sueldos Digital (interfaz AFIP/ARCA) para Declaración en Línea',
     'description': '''
 Libro de Sueldos Digital (LSD)
@@ -26,11 +26,13 @@ AFIP/ARCA usa para pre-cargar el F.931 vía "Declaración en Línea".
     'data': [
         'security/ir.model.access.csv',
         'data/hr_departure_reason_data.xml',
+        'data/lsd.concepto.csv',
         'views/hr_contract_views.xml',
         'views/hr_payslip_views.xml',
         'views/hr_payroll_structure_type_views.xml',
         'wizards/lsd_export_wizard_views.xml',
         'wizards/arca_ficha_wizard_views.xml',
+        'wizards/lsd_conceptos_import_wizard_views.xml',
         'views/hr_employee_views.xml',
     ],
     'installable': True,
