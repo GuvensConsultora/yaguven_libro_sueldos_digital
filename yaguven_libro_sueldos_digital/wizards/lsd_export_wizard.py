@@ -353,7 +353,15 @@ class LsdExportWizard(models.TransientModel):
         # SOEVA) integran LRT y no obra social. Con la grilla eso sale solo.
         bi = self._bases_desde_conceptos(conceptos, payslip, log)
         base_os = bi[3]
-        bi10 = round(gross - detrac, 2)
+        # Guia N.o 18 (LSD - Bases imponibles): BI10 = BI2 (contribuciones
+        # previsionales) menos la detraccion Ley 27.541 -- NO el bruto. Con el
+        # bruto, ARCA la determina distinta a la informada apenas hay una falta
+        # injustificada u otro concepto que la grilla saca de BI2 pero no del
+        # bruto. Confirmado en produccion el 03/09/2026 sobre FREIRE (CUIL
+        # 20-31719227-5): "La base imponible 10 informada (1.070.841,92)
+        # difiere de la determinada (983.368,22)" -- el bruto menos detraccion
+        # daba la primera, BI2 menos detraccion da la segunda, exacto.
+        bi10 = round(bi[1] - detrac, 2)
         modalidad = (c.contract_type_id.code or '').strip()
         # Horas trabajadas. Sólo se informan para los jornalizados: en los
         # mensualizados Tango manda '000' y declara los días en su lugar (ver
