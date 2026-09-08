@@ -340,6 +340,25 @@ class LsdExportWizard(models.TransientModel):
         # resultado no cambia.
         detrac = (DETRAC_MEDIA if (c.x_proporcion_jornada or 1.0) < 1.0
                   else DETRAC_COMPLETA)
+        # Prorrateo cuando la persona no estuvo el mes entero (alta o baja).
+        # Decreto 759/2018, art. 3, primer parrafo: "En aquellos casos en que,
+        # por cualquier motivo, corresponda aplicar la referida detraccion en
+        # funcion de los dias trabajados, se considerara que el mes es de
+        # TREINTA (30) dias".
+        #
+        # El prorrateo por HORAS -- segundo parrafo del mismo articulo -- NO va
+        # aca: es solo para contratos a tiempo parcial del art. 92 ter LCT, y esa
+        # proporcion ya la resuelve DETRAC_MEDIA arriba. En la baja de GARCIA
+        # (08/2026) el numero por horas (7.003,68 x 52/184 = 1.979,30) y el que
+        # corresponde por dias (x 7/30 = 1.634,19) difieren en $345,11.
+        #
+        # El SAC queda afuera: usa la base 180 y su proporcion va por los dias
+        # del registro 03 (ver `hr.payslip._lsd_dias_sac`).
+        if payslip.x_dias_tope and self.grupo != 'sac':
+            # El campo admite hasta 180 por el aguinaldo; fuera del SAC un valor
+            # mayor a 30 agrandaria la detraccion en vez de prorratearla.
+            dias = min(payslip.x_dias_tope, 30)
+            detrac = round(detrac * dias / 30.0, 2)
         # ── Bases imponibles 1 a 9 ────────────────────────────────────────
         # No se declaran: ARCA las DETERMINA sumando los conceptos del registro
         # 03 segun la grilla que el contribuyente tiene registrada en el portal

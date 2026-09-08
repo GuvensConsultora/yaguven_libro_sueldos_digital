@@ -161,12 +161,14 @@ class HrPayslip(models.Model):
         espera. Por eso el SAC no necesita que nadie cargue nada a mano.
 
         `x_dias_tope` manda cuando está cargado: es la salida para el recibo que tiene
-        que apartarse de la regla, como una liquidación final de medio mes. Va a mano
-        porque el criterio del número todavía no está verificado contra ARCA — el
-        08/09/2026, en la baja de GARCIA, Leticia cargó 7 en Declaración en Línea sobre
-        un período del 1 al 10 de agosto, y de dónde sale ese 7 es justamente lo que
-        falta confirmar. Cuando esté confirmado, el cálculo va acá y el campo queda como
-        excepción, igual que `x_dias_trabajados`.
+        que apartarse de la regla, como una liquidación final de medio mes. Sigue yendo
+        a mano porque el número depende de las ausencias del período y no se deduce de
+        la fecha de baja: el 08/09/2026, en la baja de GARCIA, Leticia cargó 7 sobre un
+        período del 1 al 10 de agosto —10 días corridos, 6 hábiles— porque «faltó unos
+        días antes de renunciar». Son días trabajados, confirmado por ella.
+
+        El mismo número prorratea la detracción del registro 04 (ver
+        `lsd.export.wizard._build_reg04`): Decreto 759/2018, art. 3, mes de 30 días.
         """
         self.ensure_one()
         if self.x_dias_tope:
