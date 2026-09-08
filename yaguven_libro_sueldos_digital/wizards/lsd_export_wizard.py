@@ -496,12 +496,17 @@ class LsdExportWizard(models.TransientModel):
         n = 0
         # Reg02 campo tope: '000' = usa tope mensual completo (base 30 dias);
         # el SAC usa tope base 180. No es una preferencia del usuario, es una
-        # regla fija de la RG -- se calcula acá, no se toma de self.dias_base.
+        # regla fija de la RG -- se resuelve acá, no se toma de self.dias_base.
         # Depende de que la liquidacion SEA del aguinaldo, no del tipo que se
         # informa en la cabecera: el SAC va como 'M' igual que el resto. Sale
         # del mismo selector que decide que recibos entran, para que no puedan
         # quedar desalineados (antes eran dos campos distintos).
-        tope = '180' if self.grupo == 'sac' else '000'
+        #
+        # Desde 7.4.0 se resuelve POR RECIBO y no una sola vez para todo el
+        # archivo: una liquidacion final lleva el tope prorrateado por los dias
+        # que la persona trabajo, y ese numero es de ella, no del grupo. La
+        # precedencia vive en `hr.payslip._lsd_dias_tope()`; el grupo se le pasa
+        # porque el '180' del SAC no es un dato del recibo sino de la liquidacion.
         for ps in payslips:
             emp = ps.employee_id
             cuil = (emp.identification_id or '').replace('-', '')
@@ -517,7 +522,7 @@ class LsdExportWizard(models.TransientModel):
             fpago = (self.fecha_pago or self._rango_periodo()[1])
             r02 = ('02' + self._num(cuil, 11) + self._alf(legajo, 10)
                    + self._alf(emp.name, 50) + ' ' * 22
-                   + self._num(tope, 3)
+                   + self._num(ps._lsd_dias_tope(self.grupo), 3)
                    + fpago.strftime('%Y%m%d') + ' ' * 8 + '1')
             if len(r02) != 115:
                 raise UserError(_('Reg02 mal formado (%s) CUIL %s') % (len(r02), cuil))
@@ -526,7 +531,10 @@ class LsdExportWizard(models.TransientModel):
             reg04.append(self._build_reg04(ps, cuil, gross, redondeo, bruta,
                                            conceptos, log))
             n += 1
-            log.append(f'  OK {legajo:>6} {emp.name[:28]:28} bruta={bruta:,.2f}')
+            # El tope cargado a mano se anuncia en el resumen: es lo unico del
+            # reg02 que sale distinto de la regla, y si no se ve nadie lo revisa.
+            aviso = f'  · tope {ps.x_dias_tope} dias' if ps.x_dias_tope else ''
+            log.append(f'  OK {legajo:>6} {emp.name[:28]:28} bruta={bruta:,.2f}{aviso}')
 
         # reg01
         r01 = ('01' + self._num(cuit, 11) + self.modo_envio + self._periodo()

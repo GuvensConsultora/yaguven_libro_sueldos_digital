@@ -63,6 +63,14 @@ class HrPayslip(models.Model):
              'para el mes entero; se corrige cuando la persona ingresa o egresa '
              'a mitad de mes, porque de este número depende el importe a detraer.',
     )
+    x_dias_tope = fields.Integer(
+        'Cantidad de días para proporcionar tope',
+        help='Días con los que ARCA prorratea el tope de las bases imponibles. Se deja '
+             'vacío en el mes normal —el archivo informa el tope mensual completo, de base '
+             '30— y también en el aguinaldo, que usa la base 180 por su cuenta. Se completa '
+             'sólo cuando hay que apartarse de eso, por ejemplo en una liquidación final de '
+             'medio mes.',
+    )
     x_maternidad_art13 = fields.Monetary(
         'Maternidad / Art. 13 ley 27.674', currency_field='currency_id',
         help='Monto a informar cuando la trabajadora está en licencia por '
@@ -78,6 +86,16 @@ class HrPayslip(models.Model):
                 raise ValidationError(
                     _('Los días trabajados tienen que estar entre 0 y 31 '
                       '(se cargó %s).') % slip.x_dias_trabajados)
+
+    @api.constrains('x_dias_tope')
+    def _check_dias_tope(self):
+        """El campo son 3 posiciones: un 200 entraría truncado y sin aviso."""
+        for slip in self:
+            if not 0 <= slip.x_dias_tope <= 180:
+                raise ValidationError(
+                    _('Los días para proporcionar tope tienen que estar entre 0 y 180 '
+                      '(se cargó %s). 180 es la base del aguinaldo, que es el máximo que '
+                      'admite el campo.') % slip.x_dias_tope)
 
     def _lsd_situaciones(self):
         """Los tres tramos como los espera el registro 04 (posiciones 36 a 47).
@@ -132,6 +150,28 @@ class HrPayslip(models.Model):
             return '00'
         dias = self._dias_mes_comercial()
         return str(dias if dias is not None else 0).zfill(2)[-2:]
+
+    def _lsd_dias_tope(self, grupo=None):
+        """Los tres caracteres del registro 02, posiciones 96 a 98.
+
+        `000` no significa "sin dato": le dice a ARCA que aplique el tope mensual
+        completo, de base 30, que es lo que corresponde a un mes entero. El aguinaldo
+        usa la base 180, y el prorrateo de quien no devengó el semestre completo NO va
+        acá sino en los días del registro 03 (ver `_lsd_dias_sac`), que es como ARCA lo
+        espera. Por eso el SAC no necesita que nadie cargue nada a mano.
+
+        `x_dias_tope` manda cuando está cargado: es la salida para el recibo que tiene
+        que apartarse de la regla, como una liquidación final de medio mes. Va a mano
+        porque el criterio del número todavía no está verificado contra ARCA — el
+        08/09/2026, en la baja de GARCIA, Leticia cargó 7 en Declaración en Línea sobre
+        un período del 1 al 10 de agosto, y de dónde sale ese 7 es justamente lo que
+        falta confirmar. Cuando esté confirmado, el cálculo va acá y el campo queda como
+        excepción, igual que `x_dias_trabajados`.
+        """
+        self.ensure_one()
+        if self.x_dias_tope:
+            return str(self.x_dias_tope).zfill(3)[-3:]
+        return '180' if grupo == 'sac' else '000'
 
     def _lsd_dias_sac(self):
         """Días devengados del SAC proporcional, para el registro 03.
