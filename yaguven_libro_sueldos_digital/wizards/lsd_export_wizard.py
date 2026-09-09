@@ -723,18 +723,30 @@ class LsdExportWizard(models.TransientModel):
                 continue
             for concepto, _imp, _dc, _q, _u in self._conceptos_y_bruta(ps)[0]:
                 previos.add(concepto.strip())
-        for cuil, lineas in reg03.items():
-            ps = por_cuil.get(cuil)
+        # Un concepto que falta es un hecho DEL PERIODO, no de cada persona: si
+        # se avisa por empleado, un concepto nuevo que usan 22 personas mete 22
+        # renglones identicos y tapa a los avisos que si son de alguien. Va un
+        # renglon por concepto, diciendo a cuantos alcanza.
+        cuantos = {}
+        for lineas in reg03.values():
             for l in lineas:
                 cod = l[13:23].strip()
-                if cod not in conocidos:
-                    aviso('rechaza', 'Concepto sin grilla cargada',
-                          'El concepto %s no está en la grilla. Importarla de '
-                          'nuevo desde el portal antes de subir.' % cod, ps)
-                elif previos and cod not in previos:
-                    aviso('revisar', 'Concepto nunca presentado',
-                          'El concepto %s no se usó en períodos anteriores. '
-                          'Verificar que esté registrado en el portal.' % cod, ps)
+                cuantos[cod] = cuantos.get(cod, 0) + 1
+
+        def gente(n):
+            return '1 empleado' if n == 1 else '%s empleados' % n
+
+        for cod in sorted(codigos):
+            if cod not in conocidos:
+                aviso('rechaza', 'Concepto sin grilla cargada',
+                      'El concepto %s (%s) no está en la grilla. Importarla de '
+                      'nuevo desde el portal antes de subir.'
+                      % (cod, gente(cuantos.get(cod, 0))))
+            elif previos and cod not in previos:
+                aviso('revisar', 'Concepto nunca presentado',
+                      'El concepto %s (%s) no se usó en períodos anteriores. '
+                      'Verificar que esté registrado en el portal.'
+                      % (cod, gente(cuantos.get(cod, 0))))
 
     # -- Obra social -----------------------------------------------------------
     def _ctrl_obra_social(self, reg04, por_cuil, aviso):
