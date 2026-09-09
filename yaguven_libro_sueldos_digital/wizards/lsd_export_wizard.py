@@ -703,6 +703,15 @@ class LsdExportWizard(models.TransientModel):
             [('codigo', 'in', list(codigos))]).mapped('codigo'))
         # (2) "Codigo de concepto inexistente". El 298 (SWISS MEDICAL de
         # CARRIVALE) se agarro de casualidad comparando contra junio.
+        # Los codigos previos se sacan por el MISMO camino que arma el reg 03
+        # (`_conceptos_y_bruta`), no leyendo `x_codigo_recibo` de las reglas.
+        #
+        # Leerlo de la regla parecia equivalente y no lo es: los codigos de
+        # OBRA SOCIAL no salen de la regla sino de `payroll.obra_social`, con
+        # uno distinto por obra social (206, 227, 229, 255...). Con la lectura
+        # por regla, los 35 empleados aparecian con su codigo de OS marcado
+        # como "nunca presentado" -- 75 avisos sobre 35 recibos, todos falsos,
+        # que es justo lo que vuelve inutil a un control.
         previos = set()
         anteriores = self.env['hr.payslip'].search([
             ('company_id', '=', self.company_id.id),
@@ -710,10 +719,10 @@ class LsdExportWizard(models.TransientModel):
             ('date_to', '<', self._rango_periodo()[0]),
         ])
         for ps in anteriores:
-            for linea in ps.line_ids:
-                cod = (linea.salary_rule_id.x_codigo_recibo or '').strip()
-                if cod:
-                    previos.add(cod)
+            if not ps.contract_id:
+                continue
+            for concepto, _imp, _dc, _q, _u in self._conceptos_y_bruta(ps)[0]:
+                previos.add(concepto.strip())
         for cuil, lineas in reg03.items():
             ps = por_cuil.get(cuil)
             for l in lineas:
