@@ -585,9 +585,16 @@ class LsdExportWizard(models.TransientModel):
         avisos = self._correr_controles(payslips, lines, saltados)
         if avisos:
             self.aviso_ids = [(0, 0, a) for a in avisos]
+        # El resumen es lo unico que ella lee siempre: tiene que cuadrar con
+        # los renglones que ve. Los avisos del archivo (dias base, numero de
+        # liquidacion) no son de nadie en particular y hay que contarlos
+        # aparte, o dice "0 para mirar" con renglones en pantalla.
         con_aviso = len({a['payslip_id'] for a in avisos if a['payslip_id']})
-        log.append(f'=== Control: {n - con_aviso} sin avisos · '
-                   f'{con_aviso} para mirar ===')
+        del_archivo = len([a for a in avisos if not a['payslip_id']])
+        resumen = f'=== Control: {n - con_aviso} sin avisos · {con_aviso} para mirar'
+        if del_archivo:
+            resumen += f' · {del_archivo} del archivo'
+        log.append(resumen + ' ===')
         self.log = '\n'.join(log)
         self.state = 'done'
         return {
@@ -799,18 +806,19 @@ class LsdExportWizard(models.TransientModel):
                 aviso('rechaza', 'Base imponible 10 descalzada',
                       'Declara %.2f y de la base 2 menos la detracción salen '
                       '%.2f.' % (bi10, bi2 - detrac), ps)
-            # (12) La bruta del LSD es la del F.931: incluye los no
-            # remunerativos. Comparar contra gross_wage a secas marca falsos
-            # positivos en los que tienen NR, por eso va como REVISAR.
-            if ps:
-                bruta_arch = self._imp_de(l, 160, 175)
-                nr = sum(li.total for li in ps.line_ids
-                         if li.category_id.code == 'HABER_NR')
-                bruta_odoo = round((ps.gross_wage or 0.0) + nr, 2)
-                if abs(bruta_arch - bruta_odoo) > 1.0:
-                    aviso('revisar', 'Bruta distinta a la del recibo',
-                          'El archivo declara %.2f y el recibo (bruto más no '
-                          'remunerativos) da %.2f.' % (bruta_arch, bruta_odoo), ps)
+            # NO va un control de "bruta del archivo contra bruta del recibo".
+            #
+            # Estaba en la lista y se saco despues de probarlo: la bruta del
+            # archivo se calcula A PARTIR de los conceptos del mismo recibo, asi
+            # que compararla contra otra combinacion de esos conceptos no
+            # verifica los datos, verifica mi aritmetica. En la corrida sobre
+            # agosto marco a FREIRE por 87.473,42, que resultaron ser su falta
+            # injustificada (87.473,70, codigo 102, que la bruta resta) menos el
+            # redondeo (0,28). Sumar terminos hasta que de es reconstruir
+            # `_conceptos_y_bruta` a mano, y siempre va a faltar un caso.
+            #
+            # El control con sentido contra el recibo es el de la BI 10 de
+            # arriba, que cruza dos campos que ARCA relaciona entre si.
 
     # -- Detraccion ------------------------------------------------------------
     def _ctrl_detraccion(self, reg04, por_cuil, aviso):
