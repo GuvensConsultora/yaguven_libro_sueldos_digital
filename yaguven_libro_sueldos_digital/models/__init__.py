@@ -3,3 +3,4 @@ from . import hr_departure_reason
 from . import hr_payroll_structure_type
 from . import hr_payslip
 from . import lsd_concepto
+from . import lsd_control_aviso

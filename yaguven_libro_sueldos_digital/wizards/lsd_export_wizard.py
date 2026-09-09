@@ -123,6 +123,8 @@ class LsdExportWizard(models.TransientModel):
         'hr.employee', 'lsd_wizard_excluir_rel', string='Empleados a excluir',
         help='Para Mensualizados/Jornalizados/Todos: saca a estos empleados del '
              'grupo (van en su propia liquidacion individual aparte, ej. bajas).')
+    aviso_ids = fields.One2many(
+        'lsd.control.aviso', 'wizard_id', 'Avisos del control', readonly=True)
     file = fields.Binary('Archivo LSD', readonly=True)
     filename = fields.Char('Nombre', readonly=True)
     log = fields.Text('Resultado', readonly=True)
@@ -512,6 +514,7 @@ class LsdExportWizard(models.TransientModel):
                 log.append('')
         reg02_03 = []
         reg04 = []
+        saltados = []
         n = 0
         # Reg02 campo tope: '000' = usa tope mensual completo (base 30 dias);
         # el SAC usa tope base 180. No es una preferencia del usuario, es una
@@ -531,9 +534,11 @@ class LsdExportWizard(models.TransientModel):
             cuil = (emp.identification_id or '').replace('-', '')
             if not cuil:
                 log.append(f'  SKIP {emp.name}: sin CUIL (identification_id)')
+                saltados.append((ps, 'Sin CUIL cargado en la ficha'))
                 continue
             if not ps.contract_id:
                 log.append(f'  SKIP {emp.name}: sin contrato')
+                saltados.append((ps, 'Sin contrato'))
                 continue
             conceptos, gross, redondeo, bruta = self._conceptos_y_bruta(ps)
             # reg02
@@ -571,6 +576,18 @@ class LsdExportWizard(models.TransientModel):
         self.filename = 'LSD_%s.txt' % self._periodo()
         log.append('')
         log.append(f'=== Generado: {n} trabajadores, {len(lines)} líneas ===')
+
+        # El control corre ACA y no en un boton aparte: un boton mas es un paso
+        # mas que hay que acordarse de apretar. Generar no manda nada a ARCA,
+        # asi que se puede generar las veces que haga falta -- corregir, volver
+        # a generar -- y los avisos se recalculan solos.
+        self.aviso_ids.unlink()
+        avisos = self._correr_controles(payslips, lines, saltados)
+        if avisos:
+            self.aviso_ids = [(0, 0, a) for a in avisos]
+        con_aviso = len({a['payslip_id'] for a in avisos if a['payslip_id']})
+        log.append(f'=== Control: {n - con_aviso} sin avisos · '
+                   f'{con_aviso} para mirar ===')
         self.log = '\n'.join(log)
         self.state = 'done'
         return {
@@ -580,3 +597,215 @@ class LsdExportWizard(models.TransientModel):
             'view_mode': 'form',
             'target': 'new',
         }
+
+    # ── Control previo ────────────────────────────────────────────────────────
+    #
+    # Los 13 controles salen de rechazos REALES de ARCA, con su mensaje textual
+    # anotado al lado. Ninguno es hipotetico y ninguno frena: el archivo sale
+    # igual, con avisos o sin ellos. Un control que bloquea deja a la
+    # liquidadora esperandonos.
+    #
+    # Se corren sobre las lineas YA ARMADAS, no recalculando por su cuenta: un
+    # control que replica la cuenta verifica lo que uno cree que hace el
+    # generador, no lo que hace.
+
+    @staticmethod
+    def _imp_de(linea, ini, fin):
+        """Importe de un tramo del registro, en pesos (viene en centavos)."""
+        try:
+            return int(linea[ini:fin]) / 100.0
+        except ValueError:
+            return 0.0
+
+    def _correr_controles(self, payslips, lines, saltados):
+        """Devuelve la lista de avisos, sin crearlos todavia."""
+        self.ensure_one()
+        avisos = []
+        por_cuil = {}
+        for ps in payslips:
+            cuil = (ps.employee_id.identification_id or '').replace('-', '')
+            if cuil:
+                por_cuil[cuil] = ps
+
+        reg01 = next((l for l in lines if l.startswith('01')), '')
+        reg02 = {l[2:13]: l for l in lines if l.startswith('02')}
+        reg04 = {l[2:13]: l for l in lines if l.startswith('04')}
+        reg03 = {}
+        for l in lines:
+            if l.startswith('03'):
+                reg03.setdefault(l[2:13], []).append(l)
+
+        def aviso(estado, control, detalle, ps=None):
+            avisos.append({
+                'estado': estado,
+                'control': control,
+                'detalle': detalle,
+                'payslip_id': ps.id if ps else False,
+                'employee_id': ps.employee_id.id if ps else False,
+                'legajo': (ps.employee_id.barcode or '') if ps else '',
+            })
+
+        self._ctrl_archivo(reg01, reg02, reg04, lines, aviso)
+        self._ctrl_conceptos(reg03, por_cuil, aviso)
+        self._ctrl_obra_social(reg04, por_cuil, aviso)
+        self._ctrl_bases(reg04, por_cuil, aviso)
+        self._ctrl_detraccion(reg04, por_cuil, aviso)
+        for ps, motivo in saltados:
+            aviso('rechaza', 'Recibo fuera del archivo',
+                  '%s. Corregirlo y volver a generar.' % motivo, ps)
+        return avisos
+
+    # -- Estructura y cabecera -------------------------------------------------
+    def _ctrl_archivo(self, reg01, reg02, reg04, lines, aviso):
+        # (9) "linea 1 Para la liquidacion, los dias base deben ser 30"
+        if reg01 and reg01[27:29] != '30':
+            aviso('rechaza', 'Días base distintos de 30',
+                  'La cabecera dice %s. ARCA exige 30 en el registro 01.'
+                  % reg01[27:29])
+        # (8) Subimos 603/604/605 (el contador que arrastra Tango) y ARCA
+        # esperaba empezar por la 1. Desde Odoo no se puede saber que tiene
+        # cargado el organismo, asi que va como REVISAR.
+        try:
+            nro = int(self.nro_liquidacion or 0)
+        except ValueError:
+            nro = 0
+        if nro > 3:
+            aviso('revisar', 'Número de liquidación alto',
+                  'Es la %s. El primero de un período limpio tiene que ser 1; '
+                  'verificar en el portal cuáles ya entraron.' % nro)
+        # (10) "El tipo de Registro de la linea 414 es invalido: ''"
+        if any(not l.strip() for l in lines):
+            aviso('rechaza', 'Línea vacía en el archivo',
+                  'ARCA la lee como registro inválido. Avisar al estudio.')
+        # (11) el rechazo mas tipico: un CUIL con reg 02 y sin su reg 04
+        for cuil in reg02:
+            if cuil not in reg04:
+                aviso('rechaza', 'Trabajador sin registro 04',
+                      'CUIL %s tiene los datos pero no las bases. '
+                      'Avisar al estudio.' % cuil)
+        for cuil, linea in list(reg02.items()) + list(reg04.items()):
+            largo = 115 if linea.startswith('02') else 370
+            if len(linea) != largo:
+                aviso('rechaza', 'Registro con largo incorrecto',
+                      'CUIL %s: %s caracteres en vez de %s. Avisar al estudio.'
+                      % (cuil, len(linea), largo))
+
+    # -- Conceptos -------------------------------------------------------------
+    def _ctrl_conceptos(self, reg03, por_cuil, aviso):
+        codigos = {c for lineas in reg03.values() for c in
+                   (l[13:23].strip() for l in lineas)}
+        if not codigos:
+            return
+        # (1) "La base imponible N informada difiere de la determinada": ARCA no
+        # lee la base, la reconstruye sumando los conceptos. Si un concepto no
+        # tiene grilla, la base sale corta y rebota. Fallo 3 veces.
+        conocidos = set(self.env['lsd.concepto'].search(
+            [('codigo', 'in', list(codigos))]).mapped('codigo'))
+        # (2) "Codigo de concepto inexistente". El 298 (SWISS MEDICAL de
+        # CARRIVALE) se agarro de casualidad comparando contra junio.
+        previos = set()
+        anteriores = self.env['hr.payslip'].search([
+            ('company_id', '=', self.company_id.id),
+            ('state', 'in', ('done', 'paid', 'verify')),
+            ('date_to', '<', self._rango_periodo()[0]),
+        ])
+        for ps in anteriores:
+            for linea in ps.line_ids:
+                cod = (linea.salary_rule_id.x_codigo_recibo or '').strip()
+                if cod:
+                    previos.add(cod)
+        for cuil, lineas in reg03.items():
+            ps = por_cuil.get(cuil)
+            for l in lineas:
+                cod = l[13:23].strip()
+                if cod not in conocidos:
+                    aviso('rechaza', 'Concepto sin grilla cargada',
+                          'El concepto %s no está en la grilla. Importarla de '
+                          'nuevo desde el portal antes de subir.' % cod, ps)
+                elif previos and cod not in previos:
+                    aviso('revisar', 'Concepto nunca presentado',
+                          'El concepto %s no se usó en períodos anteriores. '
+                          'Verificar que esté registrado en el portal.' % cod, ps)
+
+    # -- Obra social -----------------------------------------------------------
+    def _ctrl_obra_social(self, reg04, por_cuil, aviso):
+        for cuil, l in reg04.items():
+            ps = por_cuil.get(cuil)
+            if not ps:
+                continue
+            c = ps.contract_id
+            rnos = l[62:68].strip('0 ')
+            ap28 = self._imp_de(l, 70, 85)
+            co29 = self._imp_de(l, 85, 100)
+            bi4 = self._imp_de(l, 220, 235)
+            # (6) CIROLIA: "el codigo de obra social debe ser cero" y "No puede
+            # especificarse importe adicional de obra social para esta actividad"
+            if c.x_condicion_id and not c.x_condicion_id.aportes_os:
+                if rnos or ap28 or co29:
+                    aviso('rechaza', 'Obra social con condición que no aporta',
+                          'La condición %s no genera aportes: el RNOS y los '
+                          'adicionales tienen que ir en cero.'
+                          % c.x_condicion_id.codigo, ps)
+            # (7) CIROLIA tenia la marca con jornada completa: $40.313,86 de
+            # contribucion adicional que ARCA rechaza explicitamente.
+            if c.x_os_doble and (c.x_proporcion_jornada or 1.0) >= 1.0:
+                aviso('rechaza', 'Doble aporte con jornada completa',
+                      'El contrato tiene la marca de OS al 6% pero la jornada '
+                      'es completa. Sacar la marca o corregir la jornada.', ps)
+            # (3) "El aporte de obra social calculado es de $21.114,65 y Ud.
+            # informa $42.229,29". ARCA redondea HACIA ARRIBA al centavo.
+            os_ = c.obra_social_id
+            if os_ and rnos and c.x_os_doble:
+                retenido = round(sum(
+                    abs(li.total) for li in ps.line_ids
+                    if (li.code or '') in OS_APORTE_CODES), 2)
+                esperado = _techo2(bi4 * (os_.porcentaje_retencion or 0.0) / 100.0) + ap28
+                if abs(retenido - esperado) > 0.01:
+                    aviso('rechaza', 'Aporte de obra social descalzado',
+                          'El recibo retiene %.2f y el archivo declara %.2f '
+                          '(base × alícuota + adicional).' % (retenido, esperado), ps)
+
+    # -- Bases imponibles ------------------------------------------------------
+    def _ctrl_bases(self, reg04, por_cuil, aviso):
+        for cuil, l in reg04.items():
+            ps = por_cuil.get(cuil)
+            bi2 = self._imp_de(l, 190, 205)
+            bi10 = self._imp_de(l, 340, 355)
+            detrac = self._imp_de(l, 355, 370)
+            # (4) FREIRE: "La base imponible 10 informada (1.070.841,92) difiere
+            # de la determinada (983.368,22)". BI10 sale de BI2, no de la bruta.
+            if abs(bi10 - round(bi2 - detrac, 2)) > 0.01:
+                aviso('rechaza', 'Base imponible 10 descalzada',
+                      'Declara %.2f y de la base 2 menos la detracción salen '
+                      '%.2f.' % (bi10, bi2 - detrac), ps)
+            # (12) La bruta del LSD es la del F.931: incluye los no
+            # remunerativos. Comparar contra gross_wage a secas marca falsos
+            # positivos en los que tienen NR, por eso va como REVISAR.
+            if ps:
+                bruta_arch = self._imp_de(l, 160, 175)
+                nr = sum(li.total for li in ps.line_ids
+                         if li.category_id.code == 'HABER_NR')
+                bruta_odoo = round((ps.gross_wage or 0.0) + nr, 2)
+                if abs(bruta_arch - bruta_odoo) > 1.0:
+                    aviso('revisar', 'Bruta distinta a la del recibo',
+                          'El archivo declara %.2f y el recibo (bruto más no '
+                          'remunerativos) da %.2f.' % (bruta_arch, bruta_odoo), ps)
+
+    # -- Detraccion ------------------------------------------------------------
+    def _ctrl_detraccion(self, reg04, por_cuil, aviso):
+        desde, hasta = self._rango_periodo()
+        for cuil, l in reg04.items():
+            ps = por_cuil.get(cuil)
+            if not ps or self.grupo == 'sac':
+                continue
+            c = ps.contract_id
+            baja = c.date_end and desde <= c.date_end <= hasta
+            alta = c.date_start and desde <= c.date_start <= hasta
+            # (5) La baja de GARCIA: el archivo declaraba la detraccion entera
+            # (7.003,68) cuando correspondian 1.634,19 -- Decreto 759/2018
+            # art. 3, prorrateo por dias trabajados con mes de 30.
+            if (baja or alta) and not ps.x_dias_tope:
+                aviso('rechaza', 'Detracción sin prorratear',
+                      '%s en el período y el recibo no tiene los días '
+                      'trabajados cargados: la detracción sale entera.'
+                      % ('Baja' if baja else 'Alta'), ps)

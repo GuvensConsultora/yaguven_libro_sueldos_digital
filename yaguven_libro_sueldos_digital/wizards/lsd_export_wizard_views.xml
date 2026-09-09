@@ -34,6 +34,26 @@
                            context="{'active_test': False}"
                            invisible="grupo not in ['mensualizados','jornalizados','todos']"/>
                 </group>
+                <!-- El control va ARRIBA del archivo: si el botón de
+                     descarga queda primero, se baja el TXT sin haber mirado
+                     los avisos y el control no sirvió de nada. -->
+                <group string="Control previo"
+                       invisible="state != 'done' or not aviso_ids">
+                    <field name="aviso_ids" nolabel="1" readonly="1">
+                        <list create="false" delete="false" edit="false"
+                              decoration-bf="estado == 'rechaza'">
+                            <field name="estado"/>
+                            <field name="legajo"/>
+                            <field name="employee_id"/>
+                            <field name="control"/>
+                            <field name="detalle"/>
+                            <button name="action_abrir_recibo" type="object"
+                                    string="Ver recibo" icon="fa-external-link"
+                                    invisible="not payslip_id"/>
+                            <field name="payslip_id" column_invisible="1"/>
+                        </list>
+                    </field>
+                </group>
                 <group string="Resultado" invisible="state != 'done'">
                     <field name="file" filename="filename" readonly="1"/>
                     <field name="filename" invisible="1"/>
