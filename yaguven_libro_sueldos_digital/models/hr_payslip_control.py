@@ -85,6 +85,9 @@ class HrPayslip(models.Model):
                 'grupo': 'sac' if es_sac else 'individual',
                 'employee_ids': [(6, 0, grupo.mapped('employee_id').ids)],
             })
+            # Solo los recibos de este calculo: si el empleado tiene otro recibo
+            # en el periodo (otra liquidacion, otro lote), no se mezcla.
+            wiz = wiz.with_context(lsd_payslip_ids=grupo.ids)
             controlados = wiz._payslips()
             wiz.action_generar()
 

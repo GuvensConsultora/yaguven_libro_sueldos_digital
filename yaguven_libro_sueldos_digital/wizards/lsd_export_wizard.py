@@ -79,6 +79,14 @@ class LsdExportWizard(models.TransientModel):
              'del archivo. El aguinaldo y las liquidaciones finales NO son un '
              'tipo aparte: van como Mensual, y se marcan con las opciones de '
              'abajo.')
+    # Octubre 2026 tiene DOS liquidaciones: la pagada (con el error de obra
+    # social) y la corregida para el F.931, en otro lote. Sin elegir el lote,
+    # el archivo junta los dos recibos del mismo empleado y ARCA lo rechaza.
+    payslip_run_id = fields.Many2one(
+        'hr.payslip.run', 'Lote',
+        help='Sólo los recibos de este lote. Hace falta cuando el mes tiene más '
+             'de una liquidación (por ejemplo, una corregida aparte de la '
+             'pagada). Vacío: todos los recibos del período.')
     excluir_bajas = fields.Boolean(
         'Sacar las bajas del mes', default=True,
         help='Los empleados con cese en el período van en su propia '
@@ -185,6 +193,12 @@ class LsdExportWizard(models.TransientModel):
         # la liquidacion de bajas salia con 1 trabajador en vez de 2 y ademas
         # el tipo se colaba en la de jornalizados, que daba 24 en vez de 23.
         # El total seguia dando 37, asi que no habia con que darse cuenta.
+        if self.payslip_run_id:
+            domain += [('payslip_run_id', '=', self.payslip_run_id.id)]
+        # El control previo al pago pasa los recibos que acaba de calcular: sin
+        # esto tomaria tambien el otro recibo del mismo empleado en el periodo.
+        if self.env.context.get('lsd_payslip_ids'):
+            domain += [('id', 'in', self.env.context['lsd_payslip_ids'])]
         w = self.with_context(active_test=False)
         if self.grupo == 'individual':
             domain += [('employee_id', 'in', w.employee_ids.ids)]
@@ -658,6 +672,18 @@ class LsdExportWizard(models.TransientModel):
         self._ctrl_aportes_ss(reg03, reg04, por_cuil, aviso)
         self._ctrl_bases(reg04, por_cuil, aviso)
         self._ctrl_detraccion(reg04, por_cuil, aviso)
+        # Dos recibos del mismo empleado en el mismo archivo: pasa cuando el mes
+        # tiene dos liquidaciones y no se eligio el lote. ARCA duplicaria todo.
+        vistos = {}
+        for ps in payslips:
+            vistos.setdefault(ps.employee_id.id, []).append(ps)
+        for recibos in vistos.values():
+            if len(recibos) > 1:
+                aviso('rechaza', 'Empleado con dos recibos en el archivo',
+                      '%s recibos del período (%s). Elegir el lote en el '
+                      'asistente.' % (len(recibos),
+                                      ', '.join(r.payslip_run_id.name or 'sin lote'
+                                                for r in recibos)), recibos[0])
         for ps, motivo in saltados:
             aviso('rechaza', 'Recibo fuera del archivo',
                   '%s. Corregirlo y volver a generar.' % motivo, ps)

@@ -22,6 +22,8 @@
                 </group>
                 <group string="Grupo de empleados">
                     <field name="grupo"/>
+                    <field name="payslip_run_id"
+                           domain="[('company_id', '=', company_id)]"/>
                     <!-- active_test=False: al empleado con baja se lo archiva,
                          y sin esto no aparece en el selector, que es
                          exactamente a quien hay que elegir acá. -->
