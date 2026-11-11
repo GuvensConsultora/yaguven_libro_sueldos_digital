@@ -655,6 +655,7 @@ class LsdExportWizard(models.TransientModel):
         self._ctrl_archivo(reg01, reg02, reg04, lines, aviso)
         self._ctrl_conceptos(reg03, por_cuil, aviso)
         self._ctrl_obra_social(reg04, por_cuil, aviso)
+        self._ctrl_aportes_ss(reg03, reg04, por_cuil, aviso)
         self._ctrl_bases(reg04, por_cuil, aviso)
         self._ctrl_detraccion(reg04, por_cuil, aviso)
         for ps, motivo in saltados:
@@ -804,6 +805,50 @@ class LsdExportWizard(models.TransientModel):
                     aviso('rechaza', 'Aporte de obra social descalzado',
                           'El recibo retiene %.2f y el archivo declara %.2f '
                           '(base × alícuota + adicional).' % (retenido, esperado), ps)
+
+    # -- Jubilacion y PAMI ------------------------------------------------------
+    def _ctrl_aportes_ss(self, reg03, reg04, por_cuil, aviso):
+        """Aporte informado == alicuota x base, igual que valida ARCA.
+
+        Fuente: ARCA, Errores frecuentes, "El aporte xxxx calculado por ARCA en
+        el periodo es de $9999 y Ud. Informo $5555" (Validar Liq_Error_aportes):
+        jubilacion (concepto ARCA 810000) sobre la Remuneracion 1, PAMI / Ley
+        19.032 (810001) sobre la Remuneracion 5. Lo informado sale de los
+        conceptos del reg 03 asociados a esos codigos ARCA, que es como lo
+        asocia ARCA, no de los codigos de nuestras reglas.
+
+        Alicuotas: jubilacion 11 % + aporte adicional de SS del reg 04 (pos.
+        53-57); PAMI 3 %. El jubilado en actividad (condicion sin aportes de
+        obra social, CIROLIA) no aporta PAMI: asi entro el LSD de agosto y
+        septiembre 2026. Medido el 11/11/2026 sobre agosto, septiembre y
+        octubre: 0 diferencias fuera de ese caso.
+        """
+        afip = {c.codigo.strip(): (c.codigo_afip or '').strip()
+                for c in self.env['lsd.concepto'].search([])}
+        for cuil, l in reg04.items():
+            ps = por_cuil.get(cuil)
+            if not ps:
+                continue
+            c = ps.contract_id
+            informado = {'810000': 0.0, '810001': 0.0}
+            for l3 in reg03.get(cuil, []):
+                cod = afip.get(l3[13:23].strip(), '')
+                if cod in informado:
+                    informado[cod] += self._imp_de(l3, 29, 44)
+            adic = int(l[52:57] or 0) / 100.0
+            jubilado = c.x_condicion_id and not c.x_condicion_id.aportes_os
+            esperado = {
+                '810000': _techo2(self._imp_de(l, 175, 190) * (11.0 + adic) / 100.0),
+                '810001': 0.0 if jubilado else
+                          _techo2(self._imp_de(l, 235, 250) * 3.0 / 100.0),
+            }
+            nombres = {'810000': 'jubilación', '810001': 'PAMI (Ley 19.032)'}
+            for cod in ('810000', '810001'):
+                inf = round(informado[cod], 2)
+                if round(abs(inf - esperado[cod]), 2) > 0.01:
+                    aviso('rechaza', 'Aporte de %s descalzado' % nombres[cod],
+                          'El recibo retiene %.2f y ARCA calcula %.2f sobre la '
+                          'base del Libro de Sueldos.' % (inf, esperado[cod]), ps)
 
     # -- Bases imponibles ------------------------------------------------------
     def _ctrl_bases(self, reg04, por_cuil, aviso):
