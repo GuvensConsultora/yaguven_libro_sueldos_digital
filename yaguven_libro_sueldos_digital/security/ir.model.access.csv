@@ -6,3 +6,4 @@ access_lsd_concepto_user,lsd.concepto.user,model_lsd_concepto,hr_payroll.group_h
 access_lsd_concepto_manager,lsd.concepto.manager,model_lsd_concepto,hr_payroll.group_hr_payroll_manager,1,1,1,1
 access_lsd_conceptos_import_wizard,lsd.conceptos.import.wizard,model_lsd_conceptos_import_wizard,hr_payroll.group_hr_payroll_manager,1,1,1,1
 access_lsd_control_aviso_user,lsd.control.aviso.user,model_lsd_control_aviso,hr_payroll.group_hr_payroll_user,1,1,1,1
+access_payroll_control_aviso_user,payroll.control.aviso.user,model_payroll_control_aviso,hr_payroll.group_hr_payroll_user,1,1,1,1

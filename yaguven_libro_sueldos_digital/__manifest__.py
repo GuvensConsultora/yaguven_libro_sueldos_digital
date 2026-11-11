@@ -1,6 +1,6 @@
 {
     'name': 'Yagüven - Libro de Sueldos Digital (LSD/F.931)',
-    'version': '18.0.8.1.0',
+    'version': '18.0.9.0.0',
     'summary': 'Exportador del Libro de Sueldos Digital (interfaz AFIP/ARCA) para Declaración en Línea',
     'description': '''
 Libro de Sueldos Digital (LSD)
@@ -18,6 +18,8 @@ AFIP/ARCA usa para pre-cargar el F.931 vía "Declaración en Línea".
 - Ficha ARCA (Alta/Baja): wizard que arma, desde el legajo, los datos a tipear
   en Simplificación Registral (no hay webservice de alta/baja de ARCA), en el
   orden del formulario oficial.
+- Control previo al pago: los controles del LSD corren solos al calcular
+  los recibos y dejan avisos en el recibo y en el lote, antes de pagar.
 ''',
     'author': 'Yagüven C.G.',
     'category': 'Human Resources/Payroll',
@@ -34,6 +36,7 @@ AFIP/ARCA usa para pre-cargar el F.931 vía "Declaración en Línea".
         'wizards/arca_ficha_wizard_views.xml',
         'wizards/lsd_conceptos_import_wizard_views.xml',
         'views/hr_employee_views.xml',
+        'views/payroll_control_aviso_views.xml',
     ],
     'installable': True,
     'auto_install': False,

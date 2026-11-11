@@ -782,13 +782,25 @@ class LsdExportWizard(models.TransientModel):
                       'es completa. Sacar la marca o corregir la jornada.', ps)
             # (3) "El aporte de obra social calculado es de $21.114,65 y Ud.
             # informa $42.229,29". ARCA redondea HACIA ARRIBA al centavo.
+            #
+            # Corre para TODOS los que aportan obra social, no solo los de media
+            # jornada. Hasta el 11/11/2026 estaba limitado a `x_os_doble` y por
+            # eso no vio octubre 2026: los recibos retenian el 3% sin los no
+            # remunerativos (572/573) y la grilla de ARCA los tiene en la base 4.
+            # ARCA rechazo 29 CUIL el dia del vencimiento ("El aporte de obra
+            # social calculado por ARCA en el periodo es de $36.628,79 y Ud.
+            # informa $33.628,78"). Los jubilados no llegan aca: su RNOS sale
+            # en cero en el reg 04.
             os_ = c.obra_social_id
-            if os_ and rnos and c.x_os_doble:
+            if os_ and rnos:
                 retenido = round(sum(
                     abs(li.total) for li in ps.line_ids
                     if (li.code or '') in OS_APORTE_CODES), 2)
                 esperado = _techo2(bi4 * (os_.porcentaje_retencion or 0.0) / 100.0) + ap28
-                if abs(retenido - esperado) > 0.01:
+                # round(): sin el, 0,01 de diferencia en coma flotante vale
+                # 0,0100000001 y marcaba de mas a 8 recibos de septiembre 2026,
+                # que ARCA acepto. Un centavo es el redondeo del recibo.
+                if round(abs(retenido - esperado), 2) > 0.01:
                     aviso('rechaza', 'Aporte de obra social descalzado',
                           'El recibo retiene %.2f y el archivo declara %.2f '
                           '(base × alícuota + adicional).' % (retenido, esperado), ps)

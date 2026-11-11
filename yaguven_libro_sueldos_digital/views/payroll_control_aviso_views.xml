@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+  <!-- Control previo al pago. Colores: azul y naranja, nunca verde/rojo, y
+       siempre con el texto RECHAZA / REVISAR al lado (no se lee solo por
+       color). -->
+
+  <!-- Lista de avisos, reusada en el recibo y en el lote. -->
+  <record id="view_payroll_control_aviso_list" model="ir.ui.view">
+    <field name="name">payroll.control.aviso.list</field>
+    <field name="model">payroll.control.aviso</field>
+    <field name="arch" type="xml">
+      <list create="0" edit="0" delete="0"
+            decoration-warning="estado == 'rechaza'"
+            decoration-info="estado == 'revisar'">
+        <field name="estado" widget="badge"
+               decoration-warning="estado == 'rechaza'"
+               decoration-info="estado == 'revisar'"/>
+        <field name="legajo"/>
+        <field name="employee_id"/>
+        <field name="control"/>
+        <field name="detalle"/>
+        <field name="payslip_id" column_invisible="1"/>
+        <button name="action_abrir_recibo" type="object" string="Abrir recibo"
+                icon="fa-external-link" invisible="not payslip_id"/>
+      </list>
+    </field>
+  </record>
+
+  <!-- Recibo: cartel arriba + pestaña. -->
+  <record id="view_hr_payslip_form_control_previo" model="ir.ui.view">
+    <field name="name">hr.payslip.form.control.previo</field>
+    <field name="model">hr.payslip</field>
+    <field name="inherit_id" ref="hr_payroll.view_hr_payslip_form"/>
+    <field name="arch" type="xml">
+      <xpath expr="//sheet" position="before">
+        <field name="control_rechaza" invisible="1"/>
+        <field name="control_avisos_count" invisible="1"/>
+        <div class="alert alert-warning mb-0" role="alert"
+             invisible="not control_rechaza">
+          <b>▲ ARCA rechazaría este recibo en el Libro de Sueldos.</b>
+          Conviene corregirlo antes de pagar. El detalle está en la pestaña
+          <b>Control previo al pago</b>.
+        </div>
+      </xpath>
+      <xpath expr="//notebook" position="inside">
+        <page string="Control previo al pago" name="control_previo_pago">
+          <p class="text-muted">
+            Corre solo cada vez que se calcula el recibo, con los mismos
+            controles que usa ARCA para el Libro de Sueldos. No cambia nada del
+            recibo: sólo avisa.
+          </p>
+          <button name="action_control_previo_pago" type="object"
+                  string="Volver a controlar" class="btn-secondary mb-2"/>
+          <field name="control_aviso_ids" nolabel="1" readonly="1">
+            <list create="0" edit="0" delete="0">
+              <field name="estado" widget="badge"
+                     decoration-warning="estado == 'rechaza'"
+                     decoration-info="estado == 'revisar'"/>
+              <field name="legajo"/>
+              <field name="employee_id"/>
+              <field name="control"/>
+              <field name="detalle"/>
+              <field name="payslip_id" column_invisible="1"/>
+              <button name="action_abrir_recibo" type="object" string="Abrir recibo"
+                      icon="fa-external-link" invisible="not payslip_id"/>
+            </list>
+          </field>
+          <p class="text-muted" invisible="control_avisos_count">
+            ● Sin avisos.
+          </p>
+        </page>
+      </xpath>
+    </field>
+  </record>
+
+  <!-- Lista de recibos: cantidad de avisos por recibo. -->
+  <record id="view_hr_payslip_list_control_previo" model="ir.ui.view">
+    <field name="name">hr.payslip.list.control.previo</field>
+    <field name="model">hr.payslip</field>
+    <field name="inherit_id" ref="hr_payroll.view_hr_payslip_tree"/>
+    <field name="arch" type="xml">
+      <xpath expr="/list" position="inside">
+        <field name="control_avisos_count" string="Avisos control"
+               optional="show"
+               decoration-warning="control_avisos_count > 0"/>
+      </xpath>
+    </field>
+  </record>
+
+  <!-- Lote: cartel + lista de todos los avisos del lote. Es la pantalla que se
+       mira antes de pagar el mes. -->
+  <record id="view_hr_payslip_run_form_control_previo" model="ir.ui.view">
+    <field name="name">hr.payslip.run.form.control.previo</field>
+    <field name="model">hr.payslip.run</field>
+    <field name="inherit_id" ref="hr_payroll.hr_payslip_run_form"/>
+    <field name="arch" type="xml">
+      <xpath expr="//sheet" position="inside">
+        <field name="control_avisos_count" invisible="1"/>
+        <div class="alert alert-warning" role="alert"
+             invisible="control_avisos_count == 0">
+          <b>▲ Control previo al pago:
+          <field name="control_avisos_count" readonly="1" class="oe_inline"/>
+          avisos en los recibos de este lote.</b>
+          <p class="mt-2 mb-1">
+            Los RECHAZA son lo que ARCA va a rebotar en el Libro de Sueldos.
+            Conviene resolverlos antes de pagar.
+          </p>
+        </div>
+        <separator string="Control previo al pago"/>
+        <button name="action_control_previo_pago" type="object"
+                string="Volver a controlar el lote" class="btn-secondary mb-2"/>
+        <field name="control_aviso_ids" nolabel="1" readonly="1">
+            <list create="0" edit="0" delete="0">
+              <field name="estado" widget="badge"
+                     decoration-warning="estado == 'rechaza'"
+                     decoration-info="estado == 'revisar'"/>
+              <field name="legajo"/>
+              <field name="employee_id"/>
+              <field name="control"/>
+              <field name="detalle"/>
+              <field name="payslip_id" column_invisible="1"/>
+              <button name="action_abrir_recibo" type="object" string="Abrir recibo"
+                      icon="fa-external-link" invisible="not payslip_id"/>
+            </list>
+          </field>
+      </xpath>
+    </field>
+  </record>
+
+</odoo>
