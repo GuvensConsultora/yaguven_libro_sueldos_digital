@@ -36,6 +36,10 @@ XR_EXCLUIR = {'199', '999', '500', '501', '502', '503', '504'}
 OS_APORTE_CODES = {'UOM_OS', 'ASS_OS', 'FOEVA_OS'}
 
 
+# Orden en que se suben las liquidaciones del mes (ver nro_liquidacion).
+ORDEN_GRUPOS = ('mensualizados', 'jornalizados', 'bajas', 'sac')
+
+
 def _techo2(valor):
     """Redondea hacia arriba al centavo, que es como calcula ARCA.
 
@@ -96,7 +100,20 @@ class LsdExportWizard(models.TransientModel):
     modo_envio = fields.Selection(
         [('SJ', 'SJ · Liquidación + F931'), ('RE', 'RE · Solo rectifica F931')],
         'Modo de envío', default='SJ', required=True)
-    nro_liquidacion = fields.Char('Nº liquidación', default='00001', required=True)
+    # ARCA exige que las liquidaciones del periodo se suban numeradas en orden
+    # ascendente ("Numero de liquidacion 1 difiere del esperado: 2"). Octubre
+    # 2026: los tres archivos salieron con 1 y el portal rechazo el segundo y el
+    # tercero el dia del vencimiento. El numero sale ahora del lugar del grupo
+    # en ORDEN_GRUPOS, contando solo los grupos que tienen recibos en el periodo
+    # (un mes sin bajas no deja un hueco). Orden fijado con el usuario el
+    # 11/11/2026: mensualizados, jornalizados, bajas, y el SAC despues.
+    # Sigue editable: si en el portal ya hay una liquidacion de mas, se corrige.
+    nro_liquidacion = fields.Char(
+        'Nº liquidación', compute='_compute_nro_liquidacion', store=True,
+        readonly=False, required=True, precompute=True,
+        help='Sale solo, en el orden en que hay que subir los archivos del mes: '
+             'mensualizados, jornalizados, bajas y aguinaldo. El nombre del '
+             'archivo lleva el mismo número adelante.')
     dias_base = fields.Char('Días base (tope)', default='30')
     fecha_pago = fields.Date('Fecha de pago')
     localidad = fields.Char(
@@ -159,6 +176,27 @@ class LsdExportWizard(models.TransientModel):
         cents = int(round(abs(v or 0) * 100))
         s = str(cents)
         return s[-w:].zfill(w)
+
+    @api.depends('grupo', 'year', 'month', 'company_id', 'payslip_run_id',
+                 'excluir_bajas')
+    def _compute_nro_liquidacion(self):
+        for w in self:
+            if (self.env.context.get('lsd_sin_nro')
+                    or w.grupo not in ORDEN_GRUPOS
+                    or not (w.year and w.month and w.company_id)):
+                w.nro_liquidacion = w.nro_liquidacion or '00001'
+                continue
+            n = 1
+            for g in ORDEN_GRUPOS[:ORDEN_GRUPOS.index(w.grupo)]:
+                otro = w.with_context(lsd_sin_nro=True).new({
+                    'year': w.year, 'month': w.month, 'grupo': g,
+                    'company_id': w.company_id.id,
+                    'payslip_run_id': w.payslip_run_id.id,
+                    'excluir_bajas': w.excluir_bajas,
+                })
+                if otro._payslips():
+                    n += 1
+            w.nro_liquidacion = '%05d' % n
 
     def _periodo(self):
         return '%04d%s' % (self.year, self.month)
@@ -587,7 +625,9 @@ class LsdExportWizard(models.TransientModel):
         # confirmado al intentar subir el TXT.
         txt = '\r\n'.join(lines)
         self.file = base64.b64encode(txt.encode('latin-1', errors='replace'))
-        self.filename = 'LSD_%s.txt' % self._periodo()
+        # El numero adelante dice en que orden subirlo; el grupo, que es.
+        self.filename = 'LSD_%s_%s_%s.txt' % (
+            self._periodo(), int(self.nro_liquidacion or 1), self.grupo)
         log.append('')
         log.append(f'=== Generado: {n} trabajadores, {len(lines)} líneas ===')
 
@@ -703,7 +743,7 @@ class LsdExportWizard(models.TransientModel):
             nro = int(self.nro_liquidacion or 0)
         except ValueError:
             nro = 0
-        if nro > 3:
+        if nro > len(ORDEN_GRUPOS):
             aviso('revisar', 'Número de liquidación alto',
                   'Es la %s. El primero de un período limpio tiene que ser 1; '
                   'verificar en el portal cuáles ya entraron.' % nro)
